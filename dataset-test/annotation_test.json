@@ -1,0 +1,96 @@
+{
+  "images": [
+    {
+      "file_name": "2024_uge14_riisrejser_hovedkatalogdec_apr_2.jpg",
+      "width": 1143,
+      "height": 1617,
+      "id": 783
+    },
+    {
+      "file_name": "2024_uge14_riisrejser_hovedkatalogdec_apr_3.jpg",
+      "width": 1143,
+      "height": 1617,
+      "id": 784
+    },
+    {
+      "file_name": "2024_uge14_riisrejser_hovedkatalogdec_apr_4.jpg",
+      "width": 1143,
+      "height": 1617,
+      "id": 785
+    },
+    {
+      "file_name": "2024_uge14_riisrejser_hovedkatalogdec_apr_5.jpg",
+      "width": 1143,
+      "height": 1617,
+      "id": 786
+    },
+    {
+      "file_name": "2024_uge14_riisrejser_hovedkatalogdec_apr_6.jpg",
+      "width": 1143,
+      "height": 1617,
+      "id": 787
+    }
+  ],
+  "annotations": [
+    {
+      "image_id": 783,
+      "bbox": [
+        8,
+        11,
+        344,
+        502
+      ],
+      "category_id": 1
+    },
+    {
+      "image_id": 784,
+      "bbox": [
+        17,
+        11,
+        330,
+        489
+      ],
+      "category_id": 1
+    },
+    {
+      "image_id": 785,
+      "bbox": [
+        10,
+        9,
+        342,
+        441
+      ],
+      "category_id": 1
+    },
+    {
+      "image_id": 786,
+      "bbox": [
+        18,
+        5,
+        354,
+        502
+      ],
+      "category_id": 1
+    },
+    {
+      "image_id": 787,
+      "bbox": [
+        10,
+        8,
+        344,
+        336
+      ],
+      "category_id": 1
+    },
+    {
+      "image_id": 788,
+      "bbox": [
+        20,
+        12,
+        346,
+        242
+      ],
+      "category_id": 1
+    }
+  ]
+}
