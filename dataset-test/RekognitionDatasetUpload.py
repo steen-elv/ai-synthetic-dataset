@@ -1,5 +1,6 @@
 import boto3
 import json
+from datetime import datetime
 from typing import List, Dict
 
 
@@ -47,14 +48,20 @@ class RekognitionDatasetCreator:
             annotations: List of annotation dictionaries in the format:
                 {
                     "image_key": "path/to/image.jpg",
+                    "image_size": {
+                        "width": int,
+                        "height": int,
+                        "depth": int
+                    },
                     "labels": [
                         {
                             "name": "label_name",
+                            "class_id": int,
                             "bbox": {
-                                "left": float,
-                                "top": float,
-                                "width": float,
-                                "height": float
+                                "top": int,
+                                "left": int,
+                                "width": int,
+                                "height": int
                             }
                         }
                     ]
@@ -62,27 +69,63 @@ class RekognitionDatasetCreator:
             bucket: S3 bucket containing the images
             prefix: Prefix path in the S3 bucket
         """
-        manifest = self._create_manifest(annotations, bucket, prefix)
-        manifest_key = f'{prefix}/manifest.json'
+        manifest_entries = []
 
-        # Upload manifest to S3
-        self.s3.put_object(
-            Bucket=bucket,
-            Key=manifest_key,
-            Body=json.dumps(manifest)
-        )
+        for ann in annotations:
+            # Create class map from labels
+            class_map = {}
+            label_annotations = []
+            objects_metadata = []
 
-        # Update dataset with manifest
+            for label in ann['labels']:
+                class_map[str(label['class_id'])] = label['name']
+
+                # Add bounding box annotation
+                label_annotations.append({
+                    "class_id": label['class_id'],
+                    "top": label['bbox']['top'],
+                    "left": label['bbox']['left'],
+                    "width": label['bbox']['width'],
+                    "height": label['bbox']['height']
+                })
+
+                # Add corresponding metadata
+                objects_metadata.append({
+                    "confidence": 1
+                })
+
+            # Create manifest entry
+            entry = {
+                "source-ref": f"s3://{bucket}/{prefix}/{ann['image_key']}",
+                "bounding-box": {
+                    "image_size": [{
+                        "width": ann['image_size']['width'],
+                        "height": ann['image_size']['height'],
+                        "depth": ann['image_size']['depth']
+                    }],
+                    "annotations": label_annotations
+                },
+                "bounding-box-metadata": {
+                    "objects": objects_metadata,
+                    "class-map": class_map,
+                    "type": "groundtruth/object-detection",
+                    "human-annotated": "yes",
+                    "creation-date": datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S"),
+                    "job-name": self.project_name
+                }
+            }
+
+            manifest_entries.append(json.dumps(entry))
+
+        # Join entries with newlines
+        manifest_data = '\n'.join(manifest_entries)
+
+        # Update dataset with manifest data
         self.rekognition.update_dataset_entries(
             DatasetArn=dataset_arn,
-            Changes=[{
-                'GroundTruth': {
-                    'S3Object': {
-                        'Bucket': bucket,
-                        'Name': manifest_key
-                    }
-                }
-            }]
+            Changes={
+                'GroundTruth': manifest_data
+            }
         )
 
     def _get_project_arn(self) -> str:
@@ -91,64 +134,3 @@ class RekognitionDatasetCreator:
             ProjectArn=f'arn:aws:rekognition:{self.rekognition.meta.region_name}:{self.rekognition.meta.account_id}:project/{self.project_name}/1.0'
         )
         return response['ProjectArn']
-
-    def _create_manifest(self, annotations: List[Dict], bucket: str, prefix: str) -> List[Dict]:
-        """Convert annotations to Rekognition manifest format"""
-        manifest = []
-        for ann in annotations:
-            entry = {
-                'source-ref': f's3://{bucket}/{prefix}/{ann["image_key"]}',
-                'custom-labels': {
-                    'labels': []
-                }
-            }
-
-            for label in ann['labels']:
-                label_entry = {
-                    'name': label['name'],
-                    'bbox': {
-                        'left': label['bbox']['left'],
-                        'top': label['bbox']['top'],
-                        'width': label['bbox']['width'],
-                        'height': label['bbox']['height']
-                    }
-                }
-                entry['custom-labels']['labels'].append(label_entry)
-
-            manifest.append(entry)
-
-        return manifest
-
-
-
-# Example usage
-creator = RekognitionDatasetCreator('my-project')
-
-# Create a new dataset
-dataset_arn = creator.create_dataset('my-dataset')
-
-# Prepare your annotations
-custom_annotations = [
-    {
-        "image_key": "image1.jpg",
-        "labels": [
-            {
-                "name": "car",
-                "bbox": {
-                    "left": 0.1,
-                    "top": 0.2,
-                    "width": 0.3,
-                    "height": 0.4
-                }
-            }
-        ]
-    }
-]
-
-# Upload annotations
-creator.upload_annotations(
-    dataset_arn=dataset_arn,
-    annotations=custom_annotations,
-    bucket='my-bucket',
-    prefix='my-images'
-)
