@@ -1,0 +1,11 @@
+
+
+Upload files to an S3 folder
+aws s3 cp ~/PycharmProjects/RekognitionExperiment/mt-input/ s3://minetilbud-example-1/mixed/ --recursive --exclude "*" --include "*.jpg" --profile ste-power
+
+aws s3 ls s3://minetilbud-example-1/ --profile ste-power
+
+aws s3api list-objects-v2 --bucket
+
+list all bucket names
+aws s3api list-buckets --query "Buckets[].Name"

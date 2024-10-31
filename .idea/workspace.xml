@@ -4,10 +4,15 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="6e8ee4e5-2e12-4570-a35b-2c7d88afaf04" name="Changes" comment="first">
-      <change afterPath="$PROJECT_DIR$/dataset-test/ConvertAnnotations.py" afterDir="false" />
+    <list default="true" id="6e8ee4e5-2e12-4570-a35b-2c7d88afaf04" name="Changes" comment="added ConvertAnnotations.py">
+      <change afterPath="$PROJECT_DIR$/aws commands.txt" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/mt-rekognition/ConvertMtInputAnnotations.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/mt-rekognition/CreateMixedRekognitionDataset.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/mt-rekognition/annotations.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/aws.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/aws.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/dataset-test/RekognitionDatasetUpload.py" beforeDir="false" afterPath="$PROJECT_DIR$/dataset-test/RekognitionDatasetUpload.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/dataset-test/ConvertAnnotations.py" beforeDir="false" afterPath="$PROJECT_DIR$/ConvertAnnotations.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/dataset-test/RekognitionDatasetUpload.py" beforeDir="false" afterPath="$PROJECT_DIR$/RekognitionDatasetUpload.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -33,29 +38,34 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent">{
-  &quot;keyToString&quot;: {
-    &quot;Python.ConvertAnnotations.executor&quot;: &quot;Run&quot;,
-    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
-    &quot;git-widget-placeholder&quot;: &quot;master&quot;,
-    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
-    &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
-    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
-    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
-    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
-    &quot;settings.editor.selected.configurable&quot;: &quot;aws.lambda&quot;,
-    &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "Python.ConvertAnnotations.executor": "Run",
+    "Python.ConvertMtInputAnnotations.executor": "Run",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "git-widget-placeholder": "master",
+    "last_opened_file_path": "/Users/steene/PycharmProjects/RekognitionExperiment/mt-rekognition",
+    "node.js.detected.package.eslint": "true",
+    "node.js.detected.package.tslint": "true",
+    "node.js.selected.package.eslint": "(autodetect)",
+    "node.js.selected.package.tslint": "(autodetect)",
+    "nodejs_package_manager_path": "npm",
+    "settings.editor.selected.configurable": "aws.toolkit",
+    "vue.rearranger.settings.migration": "true"
   }
-}</component>
+}]]></component>
   <component name="RecentsManager">
+    <key name="CopyFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$/mt-rekognition" />
+    </key>
     <key name="MoveFile.RECENT_KEYS">
-      <recent name="$PROJECT_DIR$/dataset-test/rekognition-dataset-format" />
-      <recent name="$PROJECT_DIR$/mt-input" />
-      <recent name="$PROJECT_DIR$/From_Taras" />
       <recent name="$PROJECT_DIR$" />
+      <recent name="$PROJECT_DIR$/mt-input" />
+      <recent name="$PROJECT_DIR$/dataset-test/rekognition-dataset-format" />
+      <recent name="$PROJECT_DIR$/From_Taras" />
     </key>
   </component>
-  <component name="RunManager">
+  <component name="RunManager" selected="Python.ConvertMtInputAnnotations">
     <configuration name="ConvertAnnotations" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
       <module name="RekognitionExperiment" />
       <option name="ENV_FILES" value="" />
@@ -70,7 +80,30 @@
       <option name="ADD_CONTENT_ROOTS" value="true" />
       <option name="ADD_SOURCE_ROOTS" value="true" />
       <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
-      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/dataset-test/ConvertAnnotations.py" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/ConvertAnnotations.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
+    <configuration name="ConvertMtInputAnnotations" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
+      <module name="RekognitionExperiment" />
+      <option name="ENV_FILES" value="" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/mt-rekognition" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/mt-rekognition/ConvertMtInputAnnotations.py" />
       <option name="PARAMETERS" value="" />
       <option name="SHOW_COMMAND_LINE" value="false" />
       <option name="EMULATE_TERMINAL" value="false" />
@@ -81,6 +114,7 @@
     </configuration>
     <recent_temporary>
       <list>
+        <item itemvalue="Python.ConvertMtInputAnnotations" />
         <item itemvalue="Python.ConvertAnnotations" />
       </list>
     </recent_temporary>
@@ -102,7 +136,7 @@
       <option name="presentableId" value="Default" />
       <updated>1730274793950</updated>
       <workItem from="1730274798323" duration="19383000" />
-      <workItem from="1730362198998" duration="2100000" />
+      <workItem from="1730362198998" duration="10222000" />
     </task>
     <task id="LOCAL-00001" summary="first">
       <option name="closed" value="true" />
@@ -112,7 +146,15 @@
       <option name="project" value="LOCAL" />
       <updated>1730295845591</updated>
     </task>
-    <option name="localTasksCounter" value="2" />
+    <task id="LOCAL-00002" summary="added ConvertAnnotations.py">
+      <option name="closed" value="true" />
+      <created>1730367532443</created>
+      <option name="number" value="00002" />
+      <option name="presentableId" value="LOCAL-00002" />
+      <option name="project" value="LOCAL" />
+      <updated>1730367532443</updated>
+    </task>
+    <option name="localTasksCounter" value="3" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -131,9 +173,11 @@
   </component>
   <component name="VcsManagerConfiguration">
     <MESSAGE value="first" />
-    <option name="LAST_COMMIT_MESSAGE" value="first" />
+    <MESSAGE value="added ConvertAnnotations.py" />
+    <option name="LAST_COMMIT_MESSAGE" value="added ConvertAnnotations.py" />
   </component>
   <component name="com.intellij.coverage.CoverageDataManagerImpl">
     <SUITE FILE_PATH="coverage/RekognitionExperiment$ConvertAnnotations.coverage" NAME="ConvertAnnotations Coverage Results" MODIFIED="1730367325136" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/dataset-test" />
+    <SUITE FILE_PATH="coverage/RekognitionExperiment$ConvertMtInputAnnotations.coverage" NAME="ConvertMtInputAnnotations Coverage Results" MODIFIED="1730373775144" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/mt-rekognition" />
   </component>
 </project>

@@ -1,10 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="accountSettings">
-    <option name="activeProfile" value="profile:mine-tilbud" />
+    <option name="activeProfile" value="profile:ste-power" />
     <option name="activeRegion" value="eu-west-1" />
     <option name="recentlyUsedProfiles">
       <list>
+        <option value="profile:ste-power" />
         <option value="profile:mine-tilbud" />
       </list>
     </option>
@@ -14,5 +15,8 @@
         <option value="us-east-1" />
       </list>
     </option>
+  </component>
+  <component name="connectionManager">
+    <option name="activeConnectionId" value="sso-session:power-ste" />
   </component>
 </project>
