@@ -1,5 +1,6 @@
 import sys
-sys.path.insert(0,"..")
+
+sys.path.insert(0, "..")
 from ConvertAnnotations import *
 
 # Example usage
@@ -25,8 +26,7 @@ if __name__ == "__main__":
     #     ]
     # }
     with open('annotations.json', 'r') as fr:
-     coco_data = json.load(fr)
-
+        coco_data = json.load(fr)
 
     manifest_data = convert_coco_to_rekognition(
         coco_data=coco_data,
@@ -40,5 +40,5 @@ if __name__ == "__main__":
     print(manifest_data.split('\n')[0])
 
     # Optional: Save to file
-    with open('rekognition_manifest.json', 'w') as f:
-     f.write(manifest_data)
+    with open('rekognition_manifest.jsonl', 'w') as f:
+        f.write(manifest_data)
