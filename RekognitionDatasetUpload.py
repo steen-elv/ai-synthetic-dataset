@@ -3,17 +3,14 @@ import boto3.session
 
 
 class RekognitionDatasetCreator:
-    def __init__(self, project_name: str, manifest_str: str, profile_name: str, region: str = 'eu-west-1'):
+    def __init__(self, profile_name: str, region: str = 'eu-west-1'):
         """
         Initialize the Rekognition dataset creator
 
         Args:
-            project_name: Name of the Custom Labels project
-            manifest_str: manifest data
+            profile_name: Profile name to use
             region: AWS region to use
         """
-        self.project_name = project_name
-        self.manifest_str = manifest_str
         session = boto3.Session(profile_name=profile_name, region_name=region)
         self.rekognition = session.client('rekognition', region_name=region)
 
@@ -32,6 +29,7 @@ class RekognitionDatasetCreator:
             DatasetType=dataset_type,
             ProjectArn=project_arn
         )
+        print(response)
         return response['DatasetArn']
 
     def upload_annotations(self, dataset_arn: str, annotations: str) -> None:

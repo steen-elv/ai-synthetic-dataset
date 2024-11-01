@@ -4,6 +4,7 @@ from typing import Dict, List
 
 
 def convert_coco_to_rekognition(coco_data: Dict,
+                                available_images: List[str],
                                 bucket: str,
                                 prefix: str,
                                 class_name: str = "offer") -> str:
@@ -12,6 +13,7 @@ def convert_coco_to_rekognition(coco_data: Dict,
 
     Args:
         coco_data: Dictionary containing COCO format annotations
+        available_images: List containing the available images in the bucket folder
         bucket: S3 bucket name where images are stored
         prefix: S3 prefix (folder path) where images are stored
         class_name: Name of the class/category for the annotations
@@ -21,6 +23,9 @@ def convert_coco_to_rekognition(coco_data: Dict,
     """
     # Create image lookup dictionary
     images_lookup = {img['id']: img for img in coco_data['images']}
+
+    available_images_lookup = {fn: fn for fn in available_images}
+
 
     # Store manifest entries
     manifest_entries = []
@@ -38,7 +43,12 @@ def convert_coco_to_rekognition(coco_data: Dict,
         if image_id not in images_lookup:
             continue
 
+
         image_info = images_lookup[image_id]
+
+        if image_info['file_name'] not in available_images_lookup:
+            print(f'Skipping {image_info["file_name"]}')
+            continue
 
         # Create annotations list
         label_annotations = []

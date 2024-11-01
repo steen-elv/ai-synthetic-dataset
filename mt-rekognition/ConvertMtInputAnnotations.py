@@ -1,6 +1,7 @@
 import sys
 
 sys.path.insert(0, "..")
+import os
 from ConvertAnnotations import *
 
 # Example usage
@@ -28,8 +29,11 @@ if __name__ == "__main__":
     with open('annotations.json', 'r') as fr:
         coco_data = json.load(fr)
 
+    real_file_names = os.listdir('../mt-input')
+
     manifest_data = convert_coco_to_rekognition(
         coco_data=coco_data,
+        available_images=real_file_names,
         bucket="minetilbud-example-1",
         prefix="mixed",
         class_name="offer"  # or whatever class name you want to use

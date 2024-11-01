@@ -9,3 +9,7 @@ aws s3api list-objects-v2 --bucket
 
 list all bucket names
 aws s3api list-buckets --query "Buckets[].Name"
+
+aws rekognition describe-projects --profile ste-power
+
+aws rekognition describe-dataset --dataset-arn arn:aws:rekognition:eu-west-1:825477577700:project/MineTilbud_Mix/dataset/train/1730383777846 --profile ste-power
