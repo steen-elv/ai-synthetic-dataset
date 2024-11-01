@@ -4,12 +4,10 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="6e8ee4e5-2e12-4570-a35b-2c7d88afaf04" name="Changes" comment="tidy the code">
+    <list default="true" id="6e8ee4e5-2e12-4570-a35b-2c7d88afaf04" name="Changes" comment="filter annotations">
+      <change beforePath="$PROJECT_DIR$/.idea/aws.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/aws.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/ConvertAnnotations.py" beforeDir="false" afterPath="$PROJECT_DIR$/ConvertAnnotations.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/RekognitionDatasetUpload.py" beforeDir="false" afterPath="$PROJECT_DIR$/RekognitionDatasetUpload.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/aws commands.txt" beforeDir="false" afterPath="$PROJECT_DIR$/aws commands.txt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/mt-rekognition/ConvertMtInputAnnotations.py" beforeDir="false" afterPath="$PROJECT_DIR$/mt-rekognition/ConvertMtInputAnnotations.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/mt-rekognition/CreateMixedRekognitionDataset.py" beforeDir="false" afterPath="$PROJECT_DIR$/mt-rekognition/CreateMixedRekognitionDataset.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -64,7 +62,7 @@
       <recent name="$PROJECT_DIR$/From_Taras" />
     </key>
   </component>
-  <component name="RunManager" selected="Python.ConvertMtInputAnnotations">
+  <component name="RunManager" selected="Python.CreateMixedRekognitionDataset">
     <configuration name="ConvertAnnotations" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
       <module name="RekognitionExperiment" />
       <option name="ENV_FILES" value="" />
@@ -136,8 +134,8 @@
     </configuration>
     <recent_temporary>
       <list>
-        <item itemvalue="Python.ConvertMtInputAnnotations" />
         <item itemvalue="Python.CreateMixedRekognitionDataset" />
+        <item itemvalue="Python.ConvertMtInputAnnotations" />
         <item itemvalue="Python.ConvertAnnotations" />
       </list>
     </recent_temporary>
@@ -160,7 +158,7 @@
       <updated>1730274793950</updated>
       <workItem from="1730274798323" duration="19383000" />
       <workItem from="1730362198998" duration="20480000" />
-      <workItem from="1730440814550" duration="2009000" />
+      <workItem from="1730440814550" duration="13340000" />
     </task>
     <task id="LOCAL-00001" summary="first">
       <option name="closed" value="true" />
@@ -202,7 +200,15 @@
       <option name="project" value="LOCAL" />
       <updated>1730379802381</updated>
     </task>
-    <option name="localTasksCounter" value="6" />
+    <task id="LOCAL-00006" summary="filter annotations">
+      <option name="closed" value="true" />
+      <created>1730442846242</created>
+      <option name="number" value="00006" />
+      <option name="presentableId" value="LOCAL-00006" />
+      <option name="project" value="LOCAL" />
+      <updated>1730442846242</updated>
+    </task>
+    <option name="localTasksCounter" value="7" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -225,11 +231,12 @@
     <MESSAGE value="moved around a bit" />
     <MESSAGE value="added .gitignore" />
     <MESSAGE value="tidy the code" />
-    <option name="LAST_COMMIT_MESSAGE" value="tidy the code" />
+    <MESSAGE value="filter annotations" />
+    <option name="LAST_COMMIT_MESSAGE" value="filter annotations" />
   </component>
   <component name="com.intellij.coverage.CoverageDataManagerImpl">
     <SUITE FILE_PATH="coverage/RekognitionExperiment$ConvertAnnotations.coverage" NAME="ConvertAnnotations Coverage Results" MODIFIED="1730367325136" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/dataset-test" />
     <SUITE FILE_PATH="coverage/RekognitionExperiment$ConvertMtInputAnnotations.coverage" NAME="ConvertMtInputAnnotations Coverage Results" MODIFIED="1730442614953" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/mt-rekognition" />
-    <SUITE FILE_PATH="coverage/RekognitionExperiment$CreateMixedRekognitionDataset.coverage" NAME="CreateMixedRekognitionDataset Coverage Results" MODIFIED="1730384186804" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/mt-rekognition" />
+    <SUITE FILE_PATH="coverage/RekognitionExperiment$CreateMixedRekognitionDataset.coverage" NAME="CreateMixedRekognitionDataset Coverage Results" MODIFIED="1730453704431" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/mt-rekognition" />
   </component>
 </project>

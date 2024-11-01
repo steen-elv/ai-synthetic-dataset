@@ -12,4 +12,11 @@ aws s3api list-buckets --query "Buckets[].Name"
 
 aws rekognition describe-projects --profile ste-power
 
-aws rekognition describe-dataset --dataset-arn arn:aws:rekognition:eu-west-1:825477577700:project/MineTilbud_Mix/dataset/train/1730383777846 --profile ste-power
+aws rekognition describe-dataset --dataset-arn arn:aws:rekognition:eu-west-1:825477577700:project/MineTilbud_Mix/dataset/train/1730453270608 --profile ste-power
+
+aws rekognition delete-dataset --dataset-arn arn:aws:rekognition:eu-west-1:825477577700:project/MineTilbud_Mix/dataset/train/1730453270608 --profile ste-power
+
+
+aws s3 ls s3://minetilbud-dnp-ai/mt-input2/ --profile ai
+
+aws s3 cp s3://minetilbud-dnp-ai/mt-input2/ ~/PycharmProjects/RekognitionExperiment/mt-input2/ --recursive --profile ai

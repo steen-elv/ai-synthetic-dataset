@@ -1,12 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="accountSettings">
-    <option name="activeProfile" value="profile:ste-power" />
+    <option name="activeProfile" value="profile:ai" />
     <option name="activeRegion" value="eu-west-1" />
     <option name="recentlyUsedProfiles">
       <list>
-        <option value="profile:ste-power" />
+        <option value="profile:ai" />
         <option value="profile:mine-tilbud" />
+        <option value="profile:ste-power" />
       </list>
     </option>
     <option name="recentlyUsedRegions">
