@@ -3,18 +3,18 @@ import os
 import cv2
 import json
 import numpy as np
-from PIL import Image
+from PIL import Image, ImageDraw
 from datetime import datetime
 from pathlib import Path
 import random
+import math
 
 
-class OfferLayoutGenerator:
+class EnhancedOfferLayoutGenerator:
     def __init__(self, output_dir='ad_dataset'):
         self.output_dir = output_dir
         self.setup_directories()
 
-        # COCO dataset structure
         self.coco_dataset = {
             "info": {
                 "year": datetime.now().year,
@@ -29,102 +29,243 @@ class OfferLayoutGenerator:
             "categories": [{"id": 1, "name": "offer", "supercategory": "none"}]
         }
 
-        # Layout settings
-        self.canvas_size = (1200, 1600)  # A4-like proportion
+        self.canvas_size = (1200, 1600)
         self.annotation_id = 1
 
-        # Background settings
-        self.bg_colors = [(255, 255, 255), (245, 245, 245), (240, 240, 240)]
-        self.grid_patterns = ['none', 'dots', 'lines']
+        # Enhanced background patterns
+        self.background_types = [
+            'noise', 'gradient', 'pattern', 'texture',
+            'scattered', 'geometric', 'grid', 'waves'
+        ]
+
+        # Layout strategies
+        self.layout_strategies = [
+            'grid', 'diagonal', 'circular', 'random',
+            'clustered', 'spiral', 'columns', 'mosaic'
+        ]
 
     def setup_directories(self):
         """Create necessary directories"""
         os.makedirs(self.output_dir, exist_ok=True)
         os.makedirs(os.path.join(self.output_dir, 'images'), exist_ok=True)
 
-    def create_background(self, size):
-        """Create advertisement background with subtle patterns"""
-        bg_color = random.choice(self.bg_colors)
-        pattern = random.choice(self.grid_patterns)
+    def create_complex_background(self, size):
+        """Create complex background with various patterns and noise"""
+        bg_type = random.choice(self.background_types)
+        bg = np.zeros((size[1], size[0], 3), dtype=np.uint8)
 
-        # Create base background
-        bg = np.full((size[1], size[0], 3), bg_color, dtype=np.uint8)
+        if bg_type == 'noise':
+            # Complex noise pattern
+            noise_types = ['gaussian', 'speckle', 'salt_pepper']
+            noise_type = random.choice(noise_types)
 
-        if pattern == 'dots':
-            # Add subtle dot pattern
-            spacing = random.randint(30, 50)
-            for y in range(0, size[1], spacing):
-                for x in range(0, size[0], spacing):
-                    cv2.circle(bg, (x, y), 1, (220, 220, 220), -1)
+            if noise_type == 'gaussian':
+                bg = np.random.normal(220, 20, (size[1], size[0], 3)).clip(0, 255).astype(np.uint8)
+            elif noise_type == 'speckle':
+                bg = np.random.rayleigh(220, (size[1], size[0], 3)).clip(0, 255).astype(np.uint8)
+            else:  # salt_pepper
+                bg.fill(220)
+                mask = np.random.random(size[:-1]) < 0.02
+                bg[mask] = random.choice([200, 240])
 
-        elif pattern == 'lines':
-            # Add subtle line pattern
-            spacing = random.randint(40, 60)
-            color = (230, 230, 230)
-            for y in range(0, size[1], spacing):
-                cv2.line(bg, (0, y), (size[0], y), color, 1)
-            for x in range(0, size[0], spacing):
-                cv2.line(bg, (x, 0), (x, size[1]), color, 1)
+        elif bg_type == 'gradient':
+            # Complex gradient
+            angle = random.uniform(0, 2 * np.pi)
+            for y in range(size[1]):
+                for x in range(size[0]):
+                    value = (math.cos(angle) * x + math.sin(angle) * y) / (size[0] + size[1])
+                    color = int(220 + 35 * value)
+                    bg[y, x] = [color] * 3
+
+        elif bg_type == 'pattern':
+            # Geometric patterns
+            bg.fill(240)
+            pattern_size = random.randint(20, 50)
+            for y in range(0, size[1], pattern_size):
+                for x in range(0, size[0], pattern_size):
+                    if (x + y) % (pattern_size * 2) == 0:
+                        cv2.rectangle(bg, (x, y), (x + pattern_size, y + pattern_size),
+                                      (220, 220, 220), -1)
+
+        elif bg_type == 'texture':
+            # Random texture
+            texture_scale = random.randint(2, 5)
+            small_noise = np.random.normal(220, 15,
+                                           (size[1] // texture_scale, size[0] // texture_scale, 3)).clip(0, 255).astype(
+                np.uint8)
+            bg = cv2.resize(small_noise, (size[0], size[1]))
+
+        elif bg_type == 'scattered':
+            # Scattered shapes
+            bg.fill(240)
+            for _ in range(300):
+                shape_type = random.choice(['circle', 'rectangle', 'line'])
+                x = random.randint(0, size[0])
+                y = random.randint(0, size[1])
+                color = random.randint(200, 240)
+
+                if shape_type == 'circle':
+                    radius = random.randint(2, 8)
+                    cv2.circle(bg, (x, y), radius, (color, color, color), -1)
+                elif shape_type == 'rectangle':
+                    w = random.randint(4, 12)
+                    h = random.randint(4, 12)
+                    cv2.rectangle(bg, (x, y), (x + w, y + h), (color, color, color), -1)
+                else:  # line
+                    length = random.randint(10, 30)
+                    angle = random.uniform(0, 2 * np.pi)
+                    end_x = int(x + length * math.cos(angle))
+                    end_y = int(y + length * math.sin(angle))
+                    cv2.line(bg, (x, y), (end_x, end_y), (color, color, color), 1)
+
+        elif bg_type == 'geometric':
+            # Complex geometric background
+            bg.fill(240)
+            for _ in range(50):
+                points = np.random.rand(random.randint(3, 6), 2)
+                points = (points * np.array([size[0], size[1]])).astype(np.int32)
+                color = random.randint(220, 240)
+                cv2.fillPoly(bg, [points], (color, color, color))
+
+        elif bg_type == 'waves':
+            # Wave pattern
+            for y in range(size[1]):
+                for x in range(size[0]):
+                    wave = math.sin(x / 30) + math.cos(y / 20)
+                    color = int(220 + 20 * wave)
+                    bg[y, x] = [color] * 3
+
+        # Add subtle noise overlay
+        noise_overlay = np.random.normal(0, 2, bg.shape).astype(np.uint8)
+        bg = cv2.add(bg, noise_overlay)
 
         return bg
 
-    def place_offers(self, offers, min_offers=2, max_offers=6):
-        """Create advertisement layout with multiple offers"""
-        # Create background
-        canvas = self.create_background(self.canvas_size)
+    def get_offer_placement_strategy(self, num_offers, strategy):
+        """Get offer positions based on different layout strategies"""
+        positions = []
+        margin = 50
+        usable_width = self.canvas_size[0] - 2 * margin
+        usable_height = self.canvas_size[1] - 2 * margin
 
-        # Randomly select number of offers to include
+        if strategy == 'grid':
+            rows = int(np.ceil(np.sqrt(num_offers)))
+            cols = int(np.ceil(num_offers / rows))
+            cell_width = usable_width / cols
+            cell_height = usable_height / rows
+
+            for i in range(num_offers):
+                row = i // cols
+                col = i % cols
+                x = margin + col * cell_width + random.randint(-20, 20)
+                y = margin + row * cell_height + random.randint(-20, 20)
+                positions.append((x, y))
+
+        elif strategy == 'diagonal':
+            step = 1.0 / (num_offers - 1) if num_offers > 1 else 0.5
+            for i in range(num_offers):
+                t = i * step
+                x = margin + t * usable_width + random.randint(-30, 30)
+                y = margin + t * usable_height + random.randint(-30, 30)
+                positions.append((x, y))
+
+        elif strategy == 'circular':
+            center_x = self.canvas_size[0] / 2
+            center_y = self.canvas_size[1] / 2
+            radius = min(usable_width, usable_height) / 3
+
+            for i in range(num_offers):
+                angle = (i * 2 * np.pi / num_offers) + random.uniform(-0.2, 0.2)
+                x = center_x + radius * math.cos(angle) + random.randint(-30, 30)
+                y = center_y + radius * math.sin(angle) + random.randint(-30, 30)
+                positions.append((x, y))
+
+        elif strategy == 'clustered':
+            # Create 2-3 cluster centers
+            num_clusters = random.randint(2, 3)
+            cluster_centers = []
+            for _ in range(num_clusters):
+                x = random.randint(margin, self.canvas_size[0] - margin)
+                y = random.randint(margin, self.canvas_size[1] - margin)
+                cluster_centers.append((x, y))
+
+            for _ in range(num_offers):
+                center = random.choice(cluster_centers)
+                x = center[0] + random.gauss(0, 100)
+                y = center[1] + random.gauss(0, 100)
+                x = max(margin, min(x, self.canvas_size[0] - margin))
+                y = max(margin, min(y, self.canvas_size[1] - margin))
+                positions.append((x, y))
+
+        elif strategy == 'spiral':
+            center_x = self.canvas_size[0] / 2
+            center_y = self.canvas_size[1] / 2
+
+            for i in range(num_offers):
+                t = i / num_offers * 4 * np.pi
+                r = t * min(usable_width, usable_height) / (8 * np.pi)
+                x = center_x + r * math.cos(t) + random.randint(-20, 20)
+                y = center_y + r * math.sin(t) + random.randint(-20, 20)
+                positions.append((x, y))
+
+        else:  # random
+            for _ in range(num_offers):
+                x = random.randint(margin, self.canvas_size[0] - margin)
+                y = random.randint(margin, self.canvas_size[1] - margin)
+                positions.append((x, y))
+
+        return positions
+
+    def place_offers(self, offers, min_offers=2, max_offers=8):
+        """Create advertisement layout with multiple offers"""
+        # Create complex background
+        canvas = self.create_complex_background(self.canvas_size)
+
+        # Select number of offers and layout strategy
         num_offers = random.randint(min_offers, min(max_offers, len(offers)))
         selected_offers = random.sample(offers, num_offers)
+        strategy = random.choice(self.layout_strategies)
 
-        # Calculate grid-like layout
-        rows = int(np.ceil(np.sqrt(num_offers)))
-        cols = int(np.ceil(num_offers / rows))
-        cell_width = self.canvas_size[0] // cols
-        cell_height = self.canvas_size[1] // rows
+        # Get initial positions
+        positions = self.get_offer_placement_strategy(num_offers, strategy)
 
         annotations = []
         used_positions = []
 
-        for i, offer_path in enumerate(selected_offers):
+        for offer_path, initial_pos in zip(selected_offers, positions):
             try:
-                # Load and resize offer image
+                # Load offer image
                 offer_img = cv2.imread(str(offer_path))
                 if offer_img is None:
                     continue
 
-                # Calculate base position in grid
-                row = i // cols
-                col = i % cols
-
-                # Add random offset
-                offset_x = random.randint(-20, 20)
-                offset_y = random.randint(-20, 20)
-
-                # Calculate position and size
-                max_width = int(cell_width * 0.9)
-                max_height = int(cell_height * 0.9)
-
-                # Resize offer while maintaining aspect ratio
+                # Random scaling
+                scale = random.uniform(0.5, 1.0)
                 h, w = offer_img.shape[:2]
-                scale = min(max_width / w, max_height / h)
                 new_width = int(w * scale)
                 new_height = int(h * scale)
                 offer_img = cv2.resize(offer_img, (new_width, new_height))
 
-                # Calculate position
-                x = col * cell_width + (cell_width - new_width) // 2 + offset_x
-                y = row * cell_height + (cell_height - new_height) // 2 + offset_y
+                # Random rotation (slight)
+                if random.random() < 0.3:
+                    angle = random.uniform(-5, 5)
+                    matrix = cv2.getRotationMatrix2D((new_width // 2, new_height // 2), angle, 1.0)
+                    offer_img = cv2.warpAffine(offer_img, matrix, (new_width, new_height))
 
-                # Ensure offer stays within canvas bounds
+                # Position with initial placement strategy
+                x, y = initial_pos
+                x = int(x - new_width // 2)
+                y = int(y - new_height // 2)
+
+                # Ensure within bounds
                 x = max(0, min(x, self.canvas_size[0] - new_width))
                 y = max(0, min(y, self.canvas_size[1] - new_height))
 
-                # Check for overlap with existing offers
+                # Check overlap
                 bbox = [x, y, x + new_width, y + new_height]
                 overlap = False
                 for used_bbox in used_positions:
-                    if self.check_overlap(bbox, used_bbox):
+                    if self.check_overlap(bbox, used_bbox, threshold=20):
                         overlap = True
                         break
 
@@ -132,7 +273,7 @@ class OfferLayoutGenerator:
                     # Place offer on canvas
                     canvas[y:y + new_height, x:x + new_width] = offer_img
 
-                    # Create COCO annotation
+                    # Create annotation
                     annotation = {
                         "id": self.annotation_id,
                         "image_id": len(self.coco_dataset["images"]) + 1,
@@ -181,7 +322,7 @@ class OfferLayoutGenerator:
             image_path = os.path.join(self.output_dir, 'images', image_filename)
             cv2.imwrite(image_path, canvas)
 
-            # Add image info to COCO dataset
+            # Add image info
             image_info = {
                 "id": i + 1,
                 "file_name": image_filename,
@@ -190,29 +331,58 @@ class OfferLayoutGenerator:
                 "date_captured": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             }
             self.coco_dataset["images"].append(image_info)
-
-            # Add annotations
             self.coco_dataset["annotations"].extend(annotations)
+
 
             if (i + 1) % 10 == 0:
                 print(f"Generated {i + 1} layouts")
 
-        # Save COCO annotations
+                # Periodic save of annotations (backup)
+                temp_annotation_path = os.path.join(self.output_dir, 'annotations_backup.json')
+                with open(temp_annotation_path, 'w') as f:
+                    json.dump(self.coco_dataset, f, indent=2)
+
+        # Save final COCO annotations
         annotation_path = os.path.join(self.output_dir, 'annotations.json')
         with open(annotation_path, 'w') as f:
             json.dump(self.coco_dataset, f, indent=2)
 
+        # Generate and save dataset statistics
+        stats = {
+            "total_layouts": num_layouts,
+            "total_annotations": len(self.coco_dataset["annotations"]),
+            "average_offers_per_layout": len(self.coco_dataset["annotations"]) / num_layouts,
+            "completion_date": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        }
+
+        stats_path = os.path.join(self.output_dir, 'dataset_stats.json')
+        with open(stats_path, 'w') as f:
+            json.dump(stats, f, indent=2)
+
         print("\nDataset generation complete!")
         print(f"Generated {num_layouts} layouts")
         print(f"Total annotations: {len(self.coco_dataset['annotations'])}")
+        print(f"Average offers per layout: {stats['average_offers_per_layout']:.2f}")
 
 
 def generate_offer_dataset(input_folder, output_dir='ad_dataset', num_layouts=100):
     """Convenience function to generate offer detection dataset"""
-    generator = OfferLayoutGenerator(output_dir)
-    generator.generate_dataset(input_folder, num_layouts)
+    generator = EnhancedOfferLayoutGenerator(output_dir)
+
+    print("Starting dataset generation...")
+    print(f"Input folder: {input_folder}")
+    print(f"Output directory: {output_dir}")
+    print(f"Number of layouts to generate: {num_layouts}")
+
+    try:
+        generator.generate_dataset(input_folder, num_layouts)
+        return True
+    except Exception as e:
+        print(f"Error during dataset generation: {str(e)}")
+        return False
 
 
-# Generate dataset from folder of offer images
-input_folder = "/Users/steene/PycharmProjects/RekognitionExperiment/mt-input3"
-generate_offer_dataset(input_folder, output_dir="ad_dataset", num_layouts=100)
+if __name__ == "__main__":
+    # Example usage
+    input_folder = "/Users/steene/PycharmProjects/RekognitionExperiment/mt-input3"
+    generate_offer_dataset(input_folder, output_dir="ad_dataset", num_layouts=100)
