@@ -83,14 +83,14 @@ def two_points_start_bottom_left(box, width, height):
         else:
             return x2, y1, x1, y2
 
-with open('test3.json', 'r') as f:
+with open('test4.json', 'r') as f:
     cocoLike = json.load(f)
 
 #/Users/steene/PycharmProjects/RekognitionExperiment/mt-input2/2023_uge22_bauhaus_1.jpg
 #/Users/steene/PycharmProjects/RekognitionExperiment/mt-input2-rekognition/2023_uge22_bauhaus_1.jpg
 # print(cocoLike["images"])
 # print(cocoLike["images"][0]["file_name"])
-cocoImage = draw_image("/Users/steene/PycharmProjects/RekognitionExperiment/mt-input2/"+cocoLike["images"][0]["file_name"], cocoLike, top_left_format_origin_bottom)
+cocoImage = draw_image("/Users/steene/PycharmProjects/RekognitionExperiment/mt-input2/"+cocoLike["images"][0]["file_name"], cocoLike, coco_format)
 
 fig = plt.figure(figsize=(1207/100,1489/100))
 fig.figimage(cocoImage)

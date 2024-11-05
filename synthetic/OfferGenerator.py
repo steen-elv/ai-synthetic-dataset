@@ -1,205 +1,213 @@
-import numpy as np
-from PIL import Image, ImageDraw, ImageFont
 import os
-import random
-from datetime import datetime, timedelta
-import textwrap
-import colorsys
+import json
+import cv2
+import numpy as np
+from PIL import Image
+from pathlib import Path
+import shutil
+from datetime import datetime
 
 
-class AdOfferGenerator:
-    def __init__(self, output_dir='ad_dataset'):
+class OfferDatasetProcessor:
+    def __init__(self, output_dir='processed_dataset'):
         self.output_dir = output_dir
-        self.font_sizes = {
-            'large': 48,
-            'medium': 36,
-            'small': 24
+        self.setup_directories()
+
+        # Dataset statistics
+        self.stats = {
+            'total_images': 0,
+            'processed_images': 0,
+            'skipped_images': 0,
+            'image_sizes': {},
+            'processing_date': datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         }
-        self.offer_types = {
-            'discount': [
-                '{discount}% OFF',
-                'SAVE {discount}%',
-                'GET {discount}% OFF',
-                '{discount}% DISCOUNT'
-            ],
-            'bogo': [
-                'BUY ONE GET ONE FREE',
-                'BOGO FREE',
-                'BUY 1 GET 1 FREE',
-                '2 FOR 1 SPECIAL'
-            ],
-            'dollar': [
-                'SAVE ${amount}',
-                '${amount} OFF',
-                'GET ${amount} OFF',
-                'SAVE UP TO ${amount}'
-            ],
-            'free_shipping': [
-                'FREE SHIPPING',
-                'FREE DELIVERY',
-                'SHIPPING INCLUDED',
-                'NO SHIPPING COST'
-            ]
-        }
-        self.products = [
-            'Shoes', 'Shirts', 'Jeans', 'Watches', 'Bags',
-            'Electronics', 'Home Decor', 'Furniture', 'Books',
-            'Sports Gear'
+
+    def setup_directories(self):
+        """Create necessary directory structure"""
+        dirs = ['images', 'annotations', 'metadata', 'splits']
+        for dir_name in dirs:
+            os.makedirs(os.path.join(self.output_dir, dir_name), exist_ok=True)
+
+    def process_image_folder(self, input_folder, copy_original=True):
+        """Process all images in the input folder"""
+        print(f"Starting to process images from: {input_folder}")
+
+        input_path = Path(input_folder)
+        image_extensions = {'.jpg', '.jpeg', '.png', '.bmp', '.tiff'}
+
+        # Get all image files
+        image_files = [
+            f for f in input_path.rglob("*")
+            if f.suffix.lower() in image_extensions
         ]
-        self.create_directories()
 
-    def create_directories(self):
-        """Create necessary directories for dataset"""
-        os.makedirs(self.output_dir, exist_ok=True)
-        os.makedirs(os.path.join(self.output_dir, 'images'), exist_ok=True)
-        os.makedirs(os.path.join(self.output_dir, 'annotations'), exist_ok=True)
+        self.stats['total_images'] = len(image_files)
+        print(f"Found {len(image_files)} images to process")
 
-    def generate_random_color(self, exclude_colors=None):
-        """Generate random color ensuring good contrast with excluded colors"""
-        if exclude_colors is None:
-            exclude_colors = []
+        for idx, image_path in enumerate(image_files, 1):
+            try:
+                # Load image
+                img = Image.open(image_path)
 
-        while True:
-            # Generate color in HSV space for better control
-            hue = random.random()
-            saturation = random.uniform(0.4, 0.9)
-            value = random.uniform(0.4, 1.0)
+                # Generate unique identifier
+                image_id = f"offer_{idx:06d}"
 
-            # Convert to RGB
-            rgb = colorsys.hsv_to_rgb(hue, saturation, value)
-            color = tuple(int(x * 255) for x in rgb)
+                # Process image and create annotation
+                self._process_single_image(img, image_id, image_path, copy_original)
 
-            # Check contrast with excluded colors
-            has_good_contrast = True
-            for exc_color in exclude_colors:
-                contrast = abs(sum(color) - sum(exc_color))
-                if contrast < 250:  # Minimum contrast threshold
-                    has_good_contrast = False
-                    break
+                self.stats['processed_images'] += 1
 
-            if has_good_contrast:
-                return color
+                # Record image size statistics
+                size_key = f"{img.width}x{img.height}"
+                self.stats['image_sizes'][size_key] = self.stats['image_sizes'].get(size_key, 0) + 1
 
-    def generate_expiry_date(self):
-        """Generate random future expiry date"""
-        current_date = datetime.now()
-        days_ahead = random.randint(7, 90)
-        future_date = current_date + timedelta(days=days_ahead)
-        return future_date.strftime("%m/%d/%Y")
+                # Progress update
+                if idx % 100 == 0:
+                    print(f"Processed {idx} images...")
+                    self._save_stats()  # Periodic stats update
 
-    def generate_offer_text(self, offer_type):
-        """Generate offer text based on type"""
-        template = random.choice(self.offer_types[offer_type])
+            except Exception as e:
+                print(f"Error processing {image_path}: {str(e)}")
+                self.stats['skipped_images'] += 1
+                continue
 
-        if offer_type == 'discount':
-            discount = random.choice([10, 15, 20, 25, 30, 40, 50, 60, 70])
-            return template.format(discount=discount)
-        elif offer_type == 'dollar':
-            amount = random.choice([5, 10, 15, 20, 25, 30, 50, 100])
-            return template.format(amount=amount)
+        # Save final statistics
+        self._save_stats()
+        self._create_dataset_splits()
+        print("\nProcessing complete!")
+        print(f"Successfully processed: {self.stats['processed_images']} images")
+        print(f"Skipped: {self.stats['skipped_images']} images")
+
+    def _process_single_image(self, img, image_id, source_path, copy_original=True):
+        """Process a single image and create its annotation"""
+        # Prepare paths
+        if copy_original:
+            # Copy original image
+            dest_path = os.path.join(self.output_dir, 'images', f"{image_id}{source_path.suffix}")
+            shutil.copy2(source_path, dest_path)
         else:
-            return template
+            # Save as PNG with potential preprocessing
+            dest_path = os.path.join(self.output_dir, 'images', f"{image_id}.png")
+            img.save(dest_path)
 
-    def create_single_ad(self, image_id, size=(800, 400)):
-        """Create single advertisement image with offer"""
-        # Create base image
-        img = Image.new('RGB', size, 'white')
-        draw = ImageDraw.Draw(img)
-
-        # Select random offer type and generate text
-        offer_type = random.choice(list(self.offer_types.keys()))
-        offer_text = self.generate_offer_text(offer_type)
-
-        # Generate colors
-        bg_color = self.generate_random_color()
-        text_color = self.generate_random_color([bg_color])
-
-        # Fill background
-        img = Image.new('RGB', size, bg_color)
-        draw = ImageDraw.Draw(img)
-
-        # Add main offer text
-        font_size = self.font_sizes['large']
-        try:
-            font = ImageFont.truetype("arial.ttf", font_size)
-        except:
-            font = ImageFont.load_default()
-
-        # Calculate text position for center alignment
-        text_bbox = draw.textbbox((0, 0), offer_text, font=font)
-        text_width = text_bbox[2] - text_bbox[0]
-        text_height = text_bbox[3] - text_bbox[1]
-        text_x = (size[0] - text_width) // 2
-        text_y = (size[1] - text_height) // 2
-
-        # Draw text with bounding box for annotation
-        draw.text((text_x, text_y), offer_text, fill=text_color, font=font)
-
-        # Add additional details
-        product = random.choice(self.products)
-        expiry_date = self.generate_expiry_date()
-        details_text = f"On {product} | Expires {expiry_date}"
-
-        # Add details in smaller font
-        font_size_small = self.font_sizes['small']
-        try:
-            font_small = ImageFont.truetype("arial.ttf", font_size_small)
-        except:
-            font_small = ImageFont.load_default()
-
-        details_bbox = draw.textbbox((0, 0), details_text, font=font_small)
-        details_width = details_bbox[2] - details_bbox[0]
-        details_x = (size[0] - details_width) // 2
-        details_y = text_y + text_height + 20
-
-        draw.text((details_x, details_y), details_text, fill=text_color, font=font_small)
-
-        # Save image
-        image_path = os.path.join(self.output_dir, 'images', f'ad_{image_id}.png')
-        img.save(image_path)
-
-        # Create annotation
+        # Create basic annotation
         annotation = {
             'image_id': image_id,
-            'offer_type': offer_type,
-            'offer_text': offer_text,
-            'product': product,
-            'expiry_date': expiry_date,
-            'text_bbox': [text_x, text_y, text_x + text_width, text_y + text_height]
+            'file_name': os.path.basename(dest_path),
+            'width': img.width,
+            'height': img.height,
+            'source_path': str(source_path),
+            'date_processed': datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         }
 
         # Save annotation
-        annotation_path = os.path.join(self.output_dir, 'annotations', f'ad_{image_id}.txt')
+        annotation_path = os.path.join(
+            self.output_dir, 'annotations', f"{image_id}.json")
         with open(annotation_path, 'w') as f:
-            for key, value in annotation.items():
-                f.write(f'{key}: {value}\n')
+            json.dump(annotation, f, indent=2)
 
-        return img, annotation
+        return annotation
 
-    def generate_dataset(self, num_images=1000):
-        """Generate complete dataset of ad offers"""
-        dataset_info = []
+    def _save_stats(self):
+        """Save processing statistics"""
+        stats_path = os.path.join(self.output_dir, 'metadata', 'dataset_stats.json')
+        with open(stats_path, 'w') as f:
+            json.dump(self.stats, f, indent=2)
 
-        for i in range(num_images):
-            img, annotation = self.create_single_ad(i)
-            dataset_info.append(annotation)
+    def _create_dataset_splits(self, train_ratio=0.8, val_ratio=0.1):
+        """Create train/validation/test splits"""
+        # Get all processed image IDs
+        annotation_files = os.listdir(os.path.join(self.output_dir, 'annotations'))
+        image_ids = [f.split('.')[0] for f in annotation_files]
 
-            # Print progress
-            if (i + 1) % 100 == 0:
-                print(f'Generated {i + 1} images')
+        # Shuffle image IDs
+        np.random.shuffle(image_ids)
 
-        # Save dataset summary
-        summary_path = os.path.join(self.output_dir, 'dataset_summary.txt')
-        with open(summary_path, 'w') as f:
-            f.write(f'Total images: {num_images}\n')
-            f.write('\nOffer type distribution:\n')
-            offer_counts = {}
-            for ann in dataset_info:
-                offer_counts[ann['offer_type']] = offer_counts.get(ann['offer_type'], 0) + 1
-            for offer_type, count in offer_counts.items():
-                f.write(f'{offer_type}: {count} ({count / num_images * 100:.1f}%)\n')
+        # Calculate split sizes
+        total = len(image_ids)
+        train_size = int(total * train_ratio)
+        val_size = int(total * val_ratio)
 
-generator = AdOfferGenerator(output_dir='my_dataset')
+        # Create splits
+        splits = {
+            'train': image_ids[:train_size],
+            'validation': image_ids[train_size:train_size + val_size],
+            'test': image_ids[train_size + val_size:]
+        }
 
-# Generate simple geometric shapes dataset
-generator.generate_dataset(num_images=10)
+        # Save splits
+        splits_path = os.path.join(self.output_dir, 'splits', 'dataset_splits.json')
+        with open(splits_path, 'w') as f:
+            json.dump(splits, f, indent=2)
+
+    def create_dataset_info(self):
+        """Create comprehensive dataset information file"""
+        info = {
+            'name': 'Retail Offers Dataset',
+            'description': 'Dataset of retail product offers and advertisements',
+            'date_created': datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            'statistics': self.stats,
+            'directory_structure': {
+                'images': 'Original processed offer images',
+                'annotations': 'JSON annotations for each image',
+                'metadata': 'Dataset statistics and processing information',
+                'splits': 'Train/validation/test split definitions'
+            }
+        }
+
+        info_path = os.path.join(self.output_dir, 'metadata', 'dataset_info.json')
+        with open(info_path, 'w') as f:
+            json.dump(info, f, indent=2)
+
+    def verify_dataset(self):
+        """Verify dataset integrity"""
+        verification_results = {
+            'missing_images': [],
+            'missing_annotations': [],
+            'mismatched_pairs': []
+        }
+
+        # Check all images have annotations and vice versa
+        image_files = set(os.listdir(os.path.join(self.output_dir, 'images')))
+        annotation_files = set(os.listdir(os.path.join(self.output_dir, 'annotations')))
+
+        for img_file in image_files:
+            base_name = os.path.splitext(img_file)[0]
+            if f"{base_name}.json" not in annotation_files:
+                verification_results['missing_annotations'].append(img_file)
+
+        for ann_file in annotation_files:
+            base_name = os.path.splitext(ann_file)[0]
+            if not any(f.startswith(base_name) for f in image_files):
+                verification_results['missing_images'].append(ann_file)
+
+        # Save verification results
+        verify_path = os.path.join(self.output_dir, 'metadata', 'verification_results.json')
+        with open(verify_path, 'w') as f:
+            json.dump(verification_results, f, indent=2)
+
+        return verification_results
+
+
+def process_retail_dataset(input_folder, output_dir='processed_dataset'):
+    """Convenience function to process an entire retail offer dataset"""
+    processor = OfferDatasetProcessor(output_dir)
+
+    print("Starting dataset processing...")
+    processor.process_image_folder(input_folder)
+
+    print("Creating dataset information...")
+    processor.create_dataset_info()
+
+    print("Verifying dataset integrity...")
+    verification_results = processor.verify_dataset()
+
+    print("\nDataset processing complete!")
+    print(f"Output directory: {output_dir}")
+
+    return verification_results
+
+
+# Process entire folder of offer images
+input_folder = "/Users/steene/PycharmProjects/RekognitionExperiment/mt-input3"
+verification_results = process_retail_dataset(input_folder, output_dir="processed_dataset")
