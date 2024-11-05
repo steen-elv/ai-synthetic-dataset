@@ -60,21 +60,26 @@ class EnhancedOfferLayoutGenerator:
             noise_type = random.choice(noise_types)
 
             if noise_type == 'gaussian':
-                bg = np.random.normal(220, 20, (size[1], size[0], 3)).clip(0, 255).astype(np.uint8)
+                # Generate noise and clip to valid range
+                noise = np.random.normal(220, 20, (size[1], size[0], 3))
+                bg = np.clip(noise, 0, 255).astype(np.uint8)
             elif noise_type == 'speckle':
-                bg = np.random.rayleigh(220, (size[1], size[0], 3)).clip(0, 255).astype(np.uint8)
+                # Use uniform noise instead of rayleigh for better control
+                noise = np.random.uniform(200, 240, (size[1], size[0], 3))
+                bg = noise.astype(np.uint8)
             else:  # salt_pepper
                 bg.fill(220)
                 mask = np.random.random(size[:-1]) < 0.02
                 bg[mask] = random.choice([200, 240])
 
         elif bg_type == 'gradient':
-            # Complex gradient
+            # Simplified gradient calculation
             angle = random.uniform(0, 2 * np.pi)
             for y in range(size[1]):
                 for x in range(size[0]):
                     value = (math.cos(angle) * x + math.sin(angle) * y) / (size[0] + size[1])
-                    color = int(220 + 35 * value)
+                    # Ensure value stays within 0-255 range
+                    color = int(np.clip(220 + 35 * value, 0, 255))
                     bg[y, x] = [color] * 3
 
         elif bg_type == 'pattern':
@@ -88,11 +93,12 @@ class EnhancedOfferLayoutGenerator:
                                       (220, 220, 220), -1)
 
         elif bg_type == 'texture':
-            # Random texture
+            # Random texture with controlled range
             texture_scale = random.randint(2, 5)
-            small_noise = np.random.normal(220, 15,
-                                           (size[1] // texture_scale, size[0] // texture_scale, 3)).clip(0, 255).astype(
-                np.uint8)
+            small_noise = np.random.uniform(
+                200, 240,
+                (size[1] // texture_scale, size[0] // texture_scale, 3)
+            ).astype(np.uint8)
             bg = cv2.resize(small_noise, (size[0], size[1]))
 
         elif bg_type == 'scattered':
@@ -100,8 +106,8 @@ class EnhancedOfferLayoutGenerator:
             bg.fill(240)
             for _ in range(300):
                 shape_type = random.choice(['circle', 'rectangle', 'line'])
-                x = random.randint(0, size[0])
-                y = random.randint(0, size[1])
+                x = random.randint(0, size[0] - 1)  # Ensure within bounds
+                y = random.randint(0, size[1] - 1)  # Ensure within bounds
                 color = random.randint(200, 240)
 
                 if shape_type == 'circle':
@@ -110,34 +116,40 @@ class EnhancedOfferLayoutGenerator:
                 elif shape_type == 'rectangle':
                     w = random.randint(4, 12)
                     h = random.randint(4, 12)
-                    cv2.rectangle(bg, (x, y), (x + w, y + h), (color, color, color), -1)
+                    # Ensure rectangle stays within image bounds
+                    x2 = min(x + w, size[0] - 1)
+                    y2 = min(y + h, size[1] - 1)
+                    cv2.rectangle(bg, (x, y), (x2, y2), (color, color, color), -1)
                 else:  # line
                     length = random.randint(10, 30)
                     angle = random.uniform(0, 2 * np.pi)
-                    end_x = int(x + length * math.cos(angle))
-                    end_y = int(y + length * math.sin(angle))
+                    end_x = int(np.clip(x + length * math.cos(angle), 0, size[0] - 1))
+                    end_y = int(np.clip(y + length * math.sin(angle), 0, size[1] - 1))
                     cv2.line(bg, (x, y), (end_x, end_y), (color, color, color), 1)
 
         elif bg_type == 'geometric':
             # Complex geometric background
             bg.fill(240)
             for _ in range(50):
-                points = np.random.rand(random.randint(3, 6), 2)
-                points = (points * np.array([size[0], size[1]])).astype(np.int32)
+                num_points = random.randint(3, 6)
+                points = np.random.rand(num_points, 2)
+                # Ensure points are within image bounds
+                points = (points * np.array([size[0] - 1, size[1] - 1])).astype(np.int32)
                 color = random.randint(220, 240)
                 cv2.fillPoly(bg, [points], (color, color, color))
 
         elif bg_type == 'waves':
-            # Wave pattern
+            # Wave pattern with controlled range
             for y in range(size[1]):
                 for x in range(size[0]):
                     wave = math.sin(x / 30) + math.cos(y / 20)
-                    color = int(220 + 20 * wave)
+                    # Ensure color stays within valid range
+                    color = int(np.clip(220 + 20 * wave, 0, 255))
                     bg[y, x] = [color] * 3
 
-        # Add subtle noise overlay
-        noise_overlay = np.random.normal(0, 2, bg.shape).astype(np.uint8)
-        bg = cv2.add(bg, noise_overlay)
+        # Add subtle noise overlay with controlled range
+        noise_overlay = np.random.normal(0, 2, bg.shape)
+        bg = np.clip(bg.astype(np.float32) + noise_overlay, 0, 255).astype(np.uint8)
 
         return bg
 
