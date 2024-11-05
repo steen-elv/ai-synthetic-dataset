@@ -282,22 +282,30 @@ class EnhancedOfferLayoutGenerator:
                         break
 
                 if not overlap:
-                    # Place offer on canvas
-                    canvas[y:y + new_height, x:x + new_width] = offer_img
+                    # Ensure we don't exceed canvas boundaries
+                    if (y + new_height <= self.canvas_size[1] and
+                            x + new_width <= self.canvas_size[0]):
+                        # Create region of interest
+                        roi = canvas[y:y + new_height, x:x + new_width]
 
-                    # Create annotation
-                    annotation = {
-                        "id": self.annotation_id,
-                        "image_id": len(self.coco_dataset["images"]) + 1,
-                        "category_id": 1,
-                        "bbox": [x, y, new_width, new_height],
-                        "area": new_width * new_height,
-                        "segmentation": [],
-                        "iscrowd": 0
-                    }
-                    annotations.append(annotation)
-                    used_positions.append(bbox)
-                    self.annotation_id += 1
+                        # Check if ROI shape matches offer image shape
+                        if roi.shape[:2] == offer_img.shape[:2]:
+                            # Place offer on canvas
+                            canvas[y:y + new_height, x:x + new_width] = offer_img
+
+                            # Create annotation
+                            annotation = {
+                                "id": self.annotation_id,
+                                "image_id": len(self.coco_dataset["images"]) + 1,
+                                "category_id": 1,
+                                "bbox": [x, y, new_width, new_height],
+                                "area": new_width * new_height,
+                                "segmentation": [],
+                                "iscrowd": 0
+                            }
+                            annotations.append(annotation)
+                            used_positions.append(bbox)
+                            self.annotation_id += 1
 
             except Exception as e:
                 print(f"Error processing offer {offer_path}: {str(e)}")

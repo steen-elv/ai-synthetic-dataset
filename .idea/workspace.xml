@@ -4,7 +4,7 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="6e8ee4e5-2e12-4570-a35b-2c7d88afaf04" name="Changes" comment="a working synthetic dataset generator">
+    <list default="true" id="6e8ee4e5-2e12-4570-a35b-2c7d88afaf04" name="Changes" comment="fixed a bug">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/synthetic/OfferGenerator.py" beforeDir="false" afterPath="$PROJECT_DIR$/synthetic/OfferGenerator.py" afterDir="false" />
     </list>
@@ -209,7 +209,7 @@
       <updated>1730274793950</updated>
       <workItem from="1730274798323" duration="19383000" />
       <workItem from="1730362198998" duration="20480000" />
-      <workItem from="1730440814550" duration="53528000" />
+      <workItem from="1730440814550" duration="54205000" />
     </task>
     <task id="LOCAL-00001" summary="first">
       <option name="closed" value="true" />
@@ -291,7 +291,23 @@
       <option name="project" value="LOCAL" />
       <updated>1730803654130</updated>
     </task>
-    <option name="localTasksCounter" value="11" />
+    <task id="LOCAL-00011" summary="a synthetic dataset generator with more noisy background">
+      <option name="closed" value="true" />
+      <created>1730804994453</created>
+      <option name="number" value="00011" />
+      <option name="presentableId" value="LOCAL-00011" />
+      <option name="project" value="LOCAL" />
+      <updated>1730804994453</updated>
+    </task>
+    <task id="LOCAL-00012" summary="fixed a bug">
+      <option name="closed" value="true" />
+      <created>1730805232118</created>
+      <option name="number" value="00012" />
+      <option name="presentableId" value="LOCAL-00012" />
+      <option name="project" value="LOCAL" />
+      <updated>1730805232118</updated>
+    </task>
+    <option name="localTasksCounter" value="13" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -319,12 +335,14 @@
     <MESSAGE value="added plot box code and started looking at synthetic data" />
     <MESSAGE value="a version of the Offer generator" />
     <MESSAGE value="a working synthetic dataset generator" />
-    <option name="LAST_COMMIT_MESSAGE" value="a working synthetic dataset generator" />
+    <MESSAGE value="a synthetic dataset generator with more noisy background" />
+    <MESSAGE value="fixed a bug" />
+    <option name="LAST_COMMIT_MESSAGE" value="fixed a bug" />
   </component>
   <component name="com.intellij.coverage.CoverageDataManagerImpl">
     <SUITE FILE_PATH="coverage/RekognitionExperiment$PlotBBox.coverage" NAME="PlotBBox Coverage Results" MODIFIED="1730803360992" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/mt-input2-rekognition" />
     <SUITE FILE_PATH="coverage/RekognitionExperiment$ConvertAnnotations.coverage" NAME="ConvertAnnotations Coverage Results" MODIFIED="1730367325136" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/dataset-test" />
-    <SUITE FILE_PATH="coverage/RekognitionExperiment$OfferGenerator.coverage" NAME="OfferGenerator Coverage Results" MODIFIED="1730804170675" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/synthetic" />
+    <SUITE FILE_PATH="coverage/RekognitionExperiment$OfferGenerator.coverage" NAME="OfferGenerator Coverage Results" MODIFIED="1730805412604" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/synthetic" />
     <SUITE FILE_PATH="coverage/RekognitionExperiment$ConvertMtInputAnnotations__1_.coverage" NAME="ConvertMtInputAnnotations (1) Coverage Results" MODIFIED="1730466351817" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/mt-input2-rekognition" />
     <SUITE FILE_PATH="coverage/RekognitionExperiment$ConvertMtInputAnnotations.coverage" NAME="ConvertMtInputAnnotations Coverage Results" MODIFIED="1730442614953" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/mt-rekognition" />
     <SUITE FILE_PATH="coverage/RekognitionExperiment$CreateMixedRekognitionDataset.coverage" NAME="CreateMixedRekognitionDataset Coverage Results" MODIFIED="1730453704431" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/mt-rekognition" />
