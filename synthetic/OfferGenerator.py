@@ -242,4 +242,4 @@ def generate_offer_dataset(input_folder, output_dir='ad_dataset', num_layouts=10
 if __name__ == "__main__":
     # Example usage
     input_folder = "/Users/steene/PycharmProjects/RekognitionExperiment/mt-input3"
-    generate_offer_dataset(input_folder, output_dir="ad_dataset", num_layouts=100)
+    generate_offer_dataset(input_folder, output_dir="ad_dataset", num_layouts=5000)
