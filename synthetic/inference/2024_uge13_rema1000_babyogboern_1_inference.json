@@ -1,0 +1,16 @@
+{
+    "CustomLabels": [
+        {
+            "Name": "offer",
+            "Confidence": 66.0469970703125,
+            "Geometry": {
+                "BoundingBox": {
+                    "Width": 0.9848600029945374,
+                    "Height": 1.0,
+                    "Left": 0.011950000189244747,
+                    "Top": 0.0
+                }
+            }
+        }
+    ]
+}

@@ -9,7 +9,7 @@ if __name__ == "__main__":
     test_manifest = []
     train_manifest = []
 
-    with open('ad_dataset/custom_labels.manifest', 'r') as fr:
+    with open('ad_dataset_2/custom_labels.manifest', 'r') as fr:
         i = 0
         while line := fr.readline():
             if i % 5 == 0:
@@ -26,10 +26,8 @@ if __name__ == "__main__":
     # print("".join(train_manifest))
 
     # train_dataset_arn = creator.create_dataset(project_arn, "TRAIN")
-    # print(train_dataset_arn)
-    # creator.upload_annotations('arn:aws:rekognition:eu-west-1:825477577700:project/MineTilbud_Synthetic/dataset/train/1730815024478', "".join(train_manifest))
+    # creator.upload_annotations('arn:aws:rekognition:eu-west-1:825477577700:project/MineTilbud_Synthetic/dataset/train/1730899910884', "".join(train_manifest))
 
     #
     # test_dataset_arn = creator.create_dataset(project_arn, "TEST")
-    # print(test_dataset_arn)
-    creator.upload_annotations('arn:aws:rekognition:eu-west-1:825477577700:project/MineTilbud_Synthetic/dataset/test/1730815132331', "".join(test_manifest))
+    creator.upload_annotations('arn:aws:rekognition:eu-west-1:825477577700:project/MineTilbud_Synthetic/dataset/test/1730900014954', "".join(test_manifest))

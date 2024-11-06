@@ -11,7 +11,9 @@ import math
 
 
 class EnhancedOfferLayoutGenerator:
-    def __init__(self, output_dir='ad_dataset'):
+    def __init__(self, input_folder, non_offer_folder, output_dir='ad_dataset'):
+        self.non_offer_folder = non_offer_folder
+        self.input_folder = input_folder
         self.output_dir = output_dir
         # Store dimensions separately for clarity
         self.width = 1200
@@ -39,27 +41,191 @@ class EnhancedOfferLayoutGenerator:
         os.makedirs(os.path.join(self.output_dir, 'images'), exist_ok=True)
 
     def create_complex_background(self):
-        """Create complex background with correct dimensions"""
-        # Create background with height, width order for numpy
-        bg = np.full((self.height, self.width, 3), 240, dtype=np.uint8)
+        """Create more realistic complex background"""
+        bg = np.zeros((self.height, self.width, 3), dtype=np.uint8)
 
-        # Add subtle noise
-        noise = np.random.normal(0, 5, (self.height, self.width, 3))
+        # Create multiple layers of visual elements
+
+        # Base layer - gradient or multi-color background
+        start_color = np.random.randint(180, 255, 3)
+        end_color = np.random.randint(180, 255, 3)
+        for y in range(self.height):
+            ratio = y / self.height
+            bg[y] = start_color * (1 - ratio) + end_color * ratio
+
+        # Add organic patterns
+        num_shapes = random.randint(3, 8)
+        for _ in range(num_shapes):
+            shape_color = np.random.randint(160, 255, 3)
+            center_x = random.randint(0, self.width)
+            center_y = random.randint(0, self.height)
+            radius = random.randint(50, 200)
+
+            y, x = np.ogrid[-center_y:self.height - center_y, -center_x:self.width - center_x]
+            mask = x * x + y * y <= radius * radius
+
+            # Apply with transparency
+            alpha = random.uniform(0.1, 0.3)
+            bg[mask] = bg[mask] * (1 - alpha) + shape_color * alpha
+
+        # Add noise with varying intensity
+        noise_intensity = random.uniform(2, 8)
+        noise = np.random.normal(0, noise_intensity, (self.height, self.width, 3))
         bg = np.clip(bg + noise, 0, 255).astype(np.uint8)
 
-        # Add grid pattern
-        grid_spacing = random.randint(30, 50)
-        color = (220, 220, 220)
+        # Optional: Add texture patterns
+        if random.random() > 0.5:
+            texture_scale = random.randint(10, 30)
+            texture = np.random.randint(0, 30, (self.height // texture_scale, self.width // texture_scale, 3))
+            texture = cv2.resize(texture.astype(float), (self.width, self.height), interpolation=cv2.INTER_LINEAR)
+            bg = np.clip(bg + texture, 0, 255).astype(np.uint8)
 
-        # Vertical lines
-        for x in range(0, self.width, grid_spacing):
-            bg[:, x:x + 1] = color
+        return self.add_non_offer_elements(bg)
 
-        # Horizontal lines
-        for y in range(0, self.height, grid_spacing):
-            bg[y:y + 1, :] = color
+    def add_non_offer_elements(self, background):
+        """Add product images and design elements that aren't offers"""
+        # Add decorative shapes
+        num_elements = random.randint(2, 5)
+        for _ in range(num_elements):
+            # Random geometric shapes
+            shape_type = random.choice(['rectangle', 'circle', 'line'])
+            color = tuple(np.random.randint(0, 255, 3).tolist())
 
-        return bg
+            if shape_type == 'rectangle':
+                x1 = random.randint(0, self.width - 100)
+                y1 = random.randint(0, self.height - 100)
+                w = random.randint(50, 200)
+                h = random.randint(50, 200)
+                cv2.rectangle(background, (x1, y1), (x1 + w, y1 + h), color, -1)
+
+        # Add non-offer product images if available
+        # This assumes you have a collection of non-offer product images
+        non_offer_paths = []
+        for ext in ['.jpg', '.jpeg', '.png']:
+            non_offer_paths.extend(Path(self.non_offer_folder).rglob(f'*{ext}'))
+
+        background = self.add_non_offer_products(background, non_offer_paths, min_products=1, max_products=5)
+
+        return background
+
+    def add_non_offer_products(self, background, non_offer_images, min_products=2, max_products=4):
+        """
+        Add non-offer product images to the background
+
+        Args:
+            background (numpy.ndarray): The background image
+            non_offer_images (list): List of non-offer product image paths or loaded images
+            min_products (int): Minimum number of products to add
+            max_products (int): Maximum number of products to add
+
+        Returns:
+            numpy.ndarray: Background with added product images
+        """
+        # Create a copy of the background to avoid modifying the original
+        result = background.copy()
+
+        # Randomly decide how many products to add
+        num_products = random.randint(min_products, max_products)
+
+        # Keep track of used positions to avoid overlap
+        used_positions = []
+
+        for _ in range(num_products):
+            # Randomly select a product image
+            product_path = random.choice(non_offer_images)
+
+            # Load the image
+            product = cv2.imread(product_path, cv2.IMREAD_UNCHANGED)
+
+            # Random scaling factor
+            scale_factor = random.uniform(0.1, 0.3)
+
+            # Calculate new dimensions while maintaining aspect ratio
+            new_width = int(result.shape[1] * scale_factor)
+            aspect_ratio = product.shape[1] / product.shape[0]
+            new_height = int(new_width / aspect_ratio)
+
+            # Resize product
+            product_resized = cv2.resize(product, (new_width, new_height))
+
+            # Convert to RGBA if not already
+            if product_resized.shape[2] == 3:
+                product_resized = cv2.cvtColor(product_resized, cv2.COLOR_BGR2BGRA)
+
+            # Try to find a suitable position (max 10 attempts)
+            position_found = False
+            for _ in range(10):
+                # Random position
+                x = random.randint(0, result.shape[1] - new_width)
+                y = random.randint(0, result.shape[0] - new_height)
+
+                # Check if position overlaps with used positions
+                overlap = False
+                for used_pos in used_positions:
+                    used_x, used_y, used_w, used_h = used_pos
+                    if (x < used_x + used_w and x + new_width > used_x and
+                            y < used_y + used_h and y + new_height > used_y):
+                        overlap = True
+                        break
+
+                if not overlap:
+                    position_found = True
+                    used_positions.append((x, y, new_width, new_height))
+                    break
+
+            if not position_found:
+                continue
+
+            # Create mask from alpha channel
+            alpha = product_resized[:, :, 3] / 255.0
+
+            # Add some random rotation
+            if random.random() > 0.5:
+                angle = random.uniform(-15, 15)
+                rotation_matrix = cv2.getRotationMatrix2D((new_width / 2, new_height / 2), angle, 1.0)
+                product_resized = cv2.warpAffine(product_resized, rotation_matrix, (new_width, new_height))
+                alpha = cv2.warpAffine(alpha, rotation_matrix, (new_width, new_height))
+
+            # Blend product with background
+            for c in range(3):
+                result[y:y + new_height, x:x + new_width, c] = (
+                        (1 - alpha) * result[y:y + new_height, x:x + new_width, c] +
+                        alpha * product_resized[:, :, c]
+                )
+
+        return result
+
+    def apply_augmentation(self, image):
+        """Apply realistic augmentation to make synthetic images more natural"""
+        # Random brightness and contrast
+        alpha = random.uniform(0.8, 1.2)  # Contrast
+        beta = random.randint(-30, 30)  # Brightness
+        image = cv2.convertScaleAbs(image, alpha=alpha, beta=beta)
+
+        # Random blur
+        if random.random() > 0.7:
+            blur_size = random.choice([3, 5, 7])
+            image = cv2.GaussianBlur(image, (blur_size, blur_size), 0)
+
+        # Perspective transform
+        if random.random() > 0.8:
+            pts1 = np.float32([[0, 0], [image.shape[1], 0],
+                               [0, image.shape[0]], [image.shape[1], image.shape[0]]])
+            pts2 = np.float32([[random.randint(-20, 20), random.randint(-20, 20)],
+                               [image.shape[1] - random.randint(-20, 20), random.randint(-20, 20)],
+                               [random.randint(-20, 20), image.shape[0] - random.randint(-20, 20)],
+                               [image.shape[1] - random.randint(-20, 20), image.shape[0] - random.randint(-20, 20)]])
+            M = cv2.getPerspectiveTransform(pts1, pts2)
+            image = cv2.warpPerspective(image, M, (image.shape[1], image.shape[0]))
+
+        # JPEG compression simulation
+        if random.random() > 0.6:
+            quality = random.randint(60, 95)
+            encode_param = [int(cv2.IMWRITE_JPEG_QUALITY), quality]
+            result, encimg = cv2.imencode('.jpg', image, encode_param)
+            image = cv2.imdecode(encimg, 1)
+
+        return image
 
     def place_offers(self, offers, min_offers=2, max_offers=8):
         """Place offers on the canvas with corrected dimensions"""
@@ -156,7 +322,7 @@ class EnhancedOfferLayoutGenerator:
                 print(f"Error processing offer {offer_path}: {str(e)}")
                 continue
 
-        return canvas, annotations
+        return self.apply_augmentation(canvas), annotations
 
     @staticmethod
     def check_overlap(bbox1, bbox2, threshold=0):
@@ -169,18 +335,17 @@ class EnhancedOfferLayoutGenerator:
                     y1_max < y2_min - threshold or
                     y1_min > y2_max + threshold)
 
-    def generate_dataset(self, input_folder, num_layouts=100):
+    def generate_dataset(self, num_layouts=100):
         """Generate dataset with dimension-safe image handling"""
         # Get all offer images
         offer_paths = []
         for ext in ['.jpg', '.jpeg', '.png']:
-            offer_paths.extend(Path(input_folder).rglob(f'*{ext}'))
+            offer_paths.extend(Path(self.input_folder).rglob(f'*{ext}'))
 
         if not offer_paths:
-            raise ValueError(f"No images found in {input_folder}")
+            raise ValueError(f"No images found in {self.input_folder}")
 
         print(f"Found {len(offer_paths)} offer images")
-
         for i in range(num_layouts):
             try:
                 # Generate layout
@@ -220,21 +385,17 @@ class EnhancedOfferLayoutGenerator:
         print(f"Total annotations: {len(self.coco_dataset['annotations'])}")
 
 
-def generate_offer_dataset(input_folder, output_dir='ad_dataset', num_layouts=100):
+def generate_offer_dataset(input_folder, non_offer_folder, output_dir='ad_dataset_2', num_layouts=100):
     """Convenience function to generate offer detection dataset"""
-    generator = EnhancedOfferLayoutGenerator(output_dir)
+    generator = EnhancedOfferLayoutGenerator(input_folder, non_offer_folder, output_dir)
 
     print("Starting dataset generation...")
     print(f"Input folder: {input_folder}")
+    print(f"Non offer folder: {non_offer_folder}")
     print(f"Output directory: {output_dir}")
     print(f"Number of layouts to generate: {num_layouts}")
 
-    try:
-        generator.generate_dataset(input_folder, num_layouts)
-        return True
-    except Exception as e:
-        print(f"Error during dataset generation: {str(e)}")
-        return False
+    generator.generate_dataset(num_layouts)
 
 
 
@@ -242,4 +403,5 @@ def generate_offer_dataset(input_folder, output_dir='ad_dataset', num_layouts=10
 if __name__ == "__main__":
     # Example usage
     input_folder = "/Users/steene/PycharmProjects/RekognitionExperiment/mt-input3"
-    generate_offer_dataset(input_folder, output_dir="ad_dataset", num_layouts=5000)
+    non_offer_folder = "/Users/steene/PycharmProjects/RekognitionExperiment/synthetic/product_images"
+    generate_offer_dataset(input_folder, non_offer_folder, output_dir="ad_dataset_2", num_layouts=2000)
