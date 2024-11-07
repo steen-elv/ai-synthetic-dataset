@@ -247,7 +247,7 @@ class EnhancedOfferLayoutGenerator:
         return image
 
     def place_offers(self, offers, min_offers=2, max_offers=8):
-        """Place offers on the canvas with corrected dimensions"""
+        """Place offers on the canvas including challenging cases with COCO annotations"""
         # Create background
         canvas = self.create_complex_background()
 
@@ -258,178 +258,174 @@ class EnhancedOfferLayoutGenerator:
         annotations = []
         used_positions = []
 
-        # Calculate grid layout
-        rows = int(np.ceil(np.sqrt(num_offers)))
-        cols = int(np.ceil(num_offers / rows))
-        cell_width = self.width // cols
-        cell_height = self.height // rows
+        # Choose placement strategy
+        scenarios = ['grid', 'adjacent', 'matching_bg']
+        scenario = random.choice(scenarios)
 
-        for i, offer_path in enumerate(selected_offers):
-            try:
-                # Load offer image
-                offer_img = cv2.imread(str(offer_path))
-                if offer_img is None:
-                    continue
+        if scenario == 'grid':
+            # Original grid-based placement
+            rows = int(np.ceil(np.sqrt(num_offers)))
+            cols = int(np.ceil(num_offers / rows))
+            cell_width = self.width // cols
+            cell_height = self.height // rows
 
-                # Calculate grid position
-                row = i // cols
-                col = i % cols
+            for i, offer_path in enumerate(selected_offers):
+                try:
+                    offer_img = cv2.imread(str(offer_path))
+                    if offer_img is None:
+                        continue
 
-                # Scale offer to fit cell
-                orig_height, orig_width = offer_img.shape[:2]
-                scale = min(
-                    (cell_width * 0.8) / orig_width,
-                    (cell_height * 0.8) / orig_height
-                )
+                    # Grid position calculation and placement
+                    row = i // cols
+                    col = i % cols
 
-                new_width = int(orig_width * scale)
-                new_height = int(orig_height * scale)
+                    # Scale offer to fit cell
+                    orig_height, orig_width = offer_img.shape[:2]
+                    scale = min(
+                        (cell_width * 0.8) / orig_width,
+                        (cell_height * 0.8) / orig_height
+                    )
 
-                if new_width <= 0 or new_height <= 0:
-                    continue
+                    new_width = int(orig_width * scale)
+                    new_height = int(orig_height * scale)
 
-                # Resize offer
-                offer_img = cv2.resize(offer_img, (new_width, new_height))
+                    if new_width <= 0 or new_height <= 0:
+                        continue
 
-                # Calculate position with centering
-                x = col * cell_width + (cell_width - new_width) // 2
-                y = row * cell_height + (cell_height - new_height) // 2
+                    offer_img = cv2.resize(offer_img, (new_width, new_height))
+                    x = col * cell_width + (cell_width - new_width) // 2
+                    y = row * cell_height + (cell_height - new_height) // 2
 
-                # Add random offset
-                x += random.randint(-20, 20)
-                y += random.randint(-20, 20)
+                    x += random.randint(-20, 20)
+                    y += random.randint(-20, 20)
 
-                # Ensure within bounds
-                x = max(0, min(x, self.width - new_width))
-                y = max(0, min(y, self.height - new_height))
-
-                # Double-check dimensions
-                if (y + new_height <= self.height and
-                        x + new_width <= self.width):
-
-                    # Check overlap
-                    bbox = [x, y, x + new_width, y + new_height]
-                    overlap = any(self.check_overlap(bbox, used_bbox)
-                                  for used_bbox in used_positions)
-
-                    if not overlap:
-                        # Get region of interest dimensions
-                        roi_height = min(new_height, self.height - y)
-                        roi_width = min(new_width, self.width - x)
-
-                        # Ensure offer image is cropped to match ROI if needed
-                        offer_roi = offer_img[:roi_height, :roi_width]
-
-                        # Place offer
-                        canvas[y:y + roi_height, x:x + roi_width] = offer_roi
-
-                        # Create annotation
-                        annotation = {
-                            "id": self.annotation_id,
-                            "image_id": len(self.coco_dataset["images"]) + 1,
-                            "category_id": 1,
-                            "bbox": [x, y, roi_width, roi_height],
-                            "area": roi_width * roi_height,
-                            "segmentation": [],
-                            "iscrowd": 0
-                        }
+                    canvas, annotation = self._place_single_offer(
+                        canvas, offer_img, x, y, len(self.coco_dataset["images"]) + 1
+                    )
+                    if annotation:
                         annotations.append(annotation)
-                        used_positions.append(bbox)
-                        self.annotation_id += 1
+                        used_positions.append(annotation["bbox"])
+
+                except Exception as e:
+                    print(f"Error processing offer {offer_path}: {str(e)}")
+                    continue
+
+        elif scenario == 'adjacent':
+            # Place offers adjacent to each other
+            try:
+                total_width = 0
+                offer_images = []
+
+                # First pass: load and resize images
+                for offer_path in selected_offers:
+                    offer_img = cv2.imread(str(offer_path))
+                    if offer_img is None:
+                        continue
+
+                    # Use consistent height for adjacent offers
+                    target_height = int(self.height * 0.3)  # 30% of canvas height
+                    aspect_ratio = offer_img.shape[1] / offer_img.shape[0]
+                    new_width = int(target_height * aspect_ratio)
+
+                    offer_img = cv2.resize(offer_img, (new_width, target_height))
+                    total_width += new_width
+                    offer_images.append(offer_img)
+
+                # Calculate starting position
+                start_x = random.randint(0, max(0, self.width - total_width))
+                y = random.randint(0, self.height - target_height)
+
+                current_x = start_x
+                for offer_img in offer_images:
+                    canvas, annotation = self._place_single_offer(
+                        canvas, offer_img, current_x, y, len(self.coco_dataset["images"]) + 1
+                    )
+                    if annotation:
+                        annotations.append(annotation)
+                        used_positions.append(annotation["bbox"])
+                    current_x += offer_img.shape[1]
 
             except Exception as e:
-                print(f"Error processing offer {offer_path}: {str(e)}")
-                continue
+                print(f"Error in adjacent placement: {str(e)}")
+
+        elif scenario == 'matching_bg':
+            # Place offers with matching backgrounds
+            for offer_path in selected_offers:
+                try:
+                    offer_img = cv2.imread(str(offer_path))
+                    if offer_img is None:
+                        continue
+
+                    # Scale offer
+                    target_height = int(self.height * 0.3)
+                    aspect_ratio = offer_img.shape[1] / offer_img.shape[0]
+                    new_width = int(target_height * aspect_ratio)
+
+                    offer_img = cv2.resize(offer_img, (new_width, target_height))
+
+                    # Random position
+                    x = random.randint(0, self.width - new_width)
+                    y = random.randint(0, self.height - target_height)
+
+                    # Match background color
+                    bg_color = np.mean(canvas[y:y + target_height, x:x + new_width], axis=(0, 1))
+
+                    # Create a mask for the offer (you'll need to adjust this based on your offers)
+                    # This is a simple example - you might need more sophisticated masking
+                    gray = cv2.cvtColor(offer_img, cv2.COLOR_BGR2GRAY)
+                    _, mask = cv2.threshold(gray, 240, 255, cv2.THRESH_BINARY)
+                    mask = cv2.bitwise_not(mask)
+
+                    # Apply background color
+                    for c in range(3):
+                        offer_img[:, :, c][mask == 0] = bg_color[c]
+
+                    canvas, annotation = self._place_single_offer(
+                        canvas, offer_img, x, y, len(self.coco_dataset["images"]) + 1
+                    )
+                    if annotation:
+                        annotations.append(annotation)
+                        used_positions.append(annotation["bbox"])
+
+                except Exception as e:
+                    print(f"Error in matching_bg placement: {str(e)}")
 
         return self.apply_augmentation(canvas), annotations
 
-    def add_offers_with_challenging_cases(self, background, offers):
-        """
-        Add offers to background including challenging cases like adjacent placement
-        and matching background colors
+    def _place_single_offer(self, canvas, offer_img, x, y, image_id):
+        """Helper method to place a single offer and create its annotation"""
+        try:
+            # Ensure coordinates are within bounds
+            x = max(0, min(x, self.width - offer_img.shape[1]))
+            y = max(0, min(y, self.height - offer_img.shape[0]))
 
-        Args:
-            background: Background image
-            offers: List of offer images
-        """
-        result = background.copy()
+            # Get region of interest dimensions
+            roi_height = min(offer_img.shape[0], self.height - y)
+            roi_width = min(offer_img.shape[1], self.width - x)
 
-        # Create different scenarios for offer placement
-        scenarios = [
-            'adjacent',  # Place offers right next to each other
-            'overlapping',  # Slightly overlapping offers
-            'matching_bg',  # Match offer background to ad background
-            'standard'  # Random placement
-        ]
+            # Ensure offer image is cropped to match ROI if needed
+            offer_roi = offer_img[:roi_height, :roi_width]
 
-        scenario = random.choice(scenarios)
+            # Place offer
+            canvas[y:y + roi_height, x:x + roi_width] = offer_roi
 
-        if scenario == 'adjacent':
-            # Place offers adjacent to each other
-            x = random.randint(0, self.width - sum([o.shape[1] for o in offers]))
-            y = random.randint(0, self.height - max([o.shape[0] for o in offers]))
+            # Create annotation
+            annotation = {
+                "id": self.annotation_id,
+                "image_id": image_id,
+                "category_id": 1,
+                "bbox": [x, y, roi_width, roi_height],
+                "area": roi_width * roi_height,
+                "segmentation": [],
+                "iscrowd": 0
+            }
+            self.annotation_id += 1
 
-            current_x = x
-            for offer in offers:
-                result = self._blend_image(result, offer, (current_x, y))
-                current_x += offer.shape[1]
+            return canvas, annotation
 
-        elif scenario == 'overlapping':
-            # Place offers with slight overlap
-            x = random.randint(0, self.width - offers[0].shape[1])
-            y = random.randint(0, self.height - offers[0].shape[0])
-
-            for i, offer in enumerate(offers):
-                # Overlap by 10-30% with previous offer
-                if i > 0:
-                    overlap_x = random.uniform(0.1, 0.3) * offers[i - 1].shape[1]
-                    overlap_y = random.uniform(0.1, 0.3) * offers[i - 1].shape[0]
-                    x = x + offers[i - 1].shape[1] - int(overlap_x)
-                    y = y + random.randint(-int(overlap_y), int(overlap_y))
-
-                result = self._blend_image(result, offer, (x, y))
-
-        elif scenario == 'matching_bg':
-            # Match offer background to surrounding ad background
-            for offer in offers:
-                x = random.randint(0, self.width - offer.shape[1])
-                y = random.randint(0, self.height - offer.shape[0])
-
-                # Get background color at offer position
-                bg_color = np.mean(background[y:y + offer.shape[0], x:x + offer.shape[1]], axis=(0, 1))
-
-                # Create modified offer with matching background
-                modified_offer = offer.copy()
-                # Find non-transparent pixels (assuming alpha channel)
-                bg_mask = modified_offer[:, :, 3] < 128
-                # Set background color of offer to match ad background
-                for c in range(3):
-                    modified_offer[bg_mask, c] = bg_color[c]
-
-                result = self._blend_image(result, modified_offer, (x, y))
-
-        else:  # standard
-            # Random placement
-            for offer in offers:
-                x = random.randint(0, self.width - offer.shape[1])
-                y = random.randint(0, self.height - offer.shape[0])
-                result = self._blend_image(result, offer, (x, y))
-
-        return result
-
-    def _blend_image(self, background, foreground, position):
-        """Blend foreground image onto background at given position"""
-        x, y = position
-        result = background.copy()
-
-        alpha = foreground[:, :, 3] / 255.0
-        for c in range(3):
-            result[y:y + foreground.shape[0], x:x + foreground.shape[1], c] = (
-                    (1 - alpha) * result[y:y + foreground.shape[0], x:x + foreground.shape[1], c] +
-                    alpha * foreground[:, :, c]
-            )
-
-        return result
+        except Exception as e:
+            print(f"Error in _place_single_offer: {str(e)}")
+            return canvas, None
 
     @staticmethod
     def check_overlap(bbox1, bbox2, threshold=0):
@@ -512,4 +508,4 @@ if __name__ == "__main__":
     # Example usage
     input_folder = "/Users/steene/PycharmProjects/RekognitionExperiment/mt-input3"
     non_offer_folder = "/Users/steene/PycharmProjects/RekognitionExperiment/synthetic/product_images"
-    generate_offer_dataset(input_folder, non_offer_folder, output_dir="ad_dataset_3", num_layouts=11, start_with=12)
+    generate_offer_dataset(input_folder, non_offer_folder, output_dir="ad_dataset_3", num_layouts=11, start_with=1)
