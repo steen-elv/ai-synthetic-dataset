@@ -11,7 +11,8 @@ import math
 
 
 class EnhancedOfferLayoutGenerator:
-    def __init__(self, input_folder, non_offer_folder, output_dir='ad_dataset'):
+    def __init__(self, input_folder, non_offer_folder, output_dir='ad_dataset', start_with=1):
+        self.start_with = start_with
         self.non_offer_folder = non_offer_folder
         self.input_folder = input_folder
         self.output_dir = output_dir
@@ -186,6 +187,24 @@ class EnhancedOfferLayoutGenerator:
                 product_resized = cv2.warpAffine(product_resized, rotation_matrix, (new_width, new_height))
                 alpha = cv2.warpAffine(alpha, rotation_matrix, (new_width, new_height))
 
+            # brightness/contrast adjustment
+            if random.random() > 0.5:
+                alpha = random.uniform(0.8, 1.2)  # Contrast
+                beta = random.randint(-30, 30)  # Brightness
+                product_resized = cv2.convertScaleAbs(product_resized, alpha=alpha, beta=beta)
+
+            # Add perspective transformation
+            if random.random() > 0.7:
+                pts1 = np.float32([[0, 0], [new_width, 0], [0, new_height], [new_width, new_height]])
+                pts2 = np.float32([
+                    [random.randint(-10, 10), random.randint(-10, 10)],
+                    [new_width - random.randint(-10, 10), random.randint(-10, 10)],
+                    [random.randint(-10, 10), new_height - random.randint(-10, 10)],
+                    [new_width - random.randint(-10, 10), new_height - random.randint(-10, 10)]
+                ])
+                perspective_transform = cv2.getPerspectiveTransform(pts1, pts2)
+                product_resized = cv2.warpPerspective(product_resized, perspective_transform, (new_width, new_height))
+
             # Blend product with background
             for c in range(3):
                 result[y:y + new_height, x:x + new_width, c] = (
@@ -353,7 +372,7 @@ class EnhancedOfferLayoutGenerator:
 
                 if len(annotations) > 0:
                     # Save image
-                    image_filename = f'ad_{i + 1:06d}.jpg'
+                    image_filename = f'ad_{i + self.start_with:06d}.jpg'
                     image_path = os.path.join(self.output_dir, 'images', image_filename)
                     cv2.imwrite(image_path, canvas)
 
@@ -385,15 +404,16 @@ class EnhancedOfferLayoutGenerator:
         print(f"Total annotations: {len(self.coco_dataset['annotations'])}")
 
 
-def generate_offer_dataset(input_folder, non_offer_folder, output_dir='ad_dataset_2', num_layouts=100):
+def generate_offer_dataset(input_folder, non_offer_folder, output_dir='ad_dataset_2', num_layouts=100, start_with=1):
     """Convenience function to generate offer detection dataset"""
-    generator = EnhancedOfferLayoutGenerator(input_folder, non_offer_folder, output_dir)
+    generator = EnhancedOfferLayoutGenerator(input_folder, non_offer_folder, output_dir, start_with)
 
     print("Starting dataset generation...")
     print(f"Input folder: {input_folder}")
     print(f"Non offer folder: {non_offer_folder}")
     print(f"Output directory: {output_dir}")
     print(f"Number of layouts to generate: {num_layouts}")
+    print(f"When naming output images start with: {start_with}")
 
     generator.generate_dataset(num_layouts)
 
@@ -404,4 +424,4 @@ if __name__ == "__main__":
     # Example usage
     input_folder = "/Users/steene/PycharmProjects/RekognitionExperiment/mt-input3"
     non_offer_folder = "/Users/steene/PycharmProjects/RekognitionExperiment/synthetic/product_images"
-    generate_offer_dataset(input_folder, non_offer_folder, output_dir="ad_dataset_2", num_layouts=2000)
+    generate_offer_dataset(input_folder, non_offer_folder, output_dir="ad_dataset_3", num_layouts=11, start_with=12)

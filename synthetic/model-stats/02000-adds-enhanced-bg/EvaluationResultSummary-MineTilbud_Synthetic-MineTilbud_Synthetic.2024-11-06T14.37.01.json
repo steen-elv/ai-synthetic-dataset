@@ -1,0 +1,31 @@
+{
+  "AggregatedEvaluationResults": {
+    "AveragePrecision": 0.9900990099009901,
+    "AverageRecall": 0.9994850669412977,
+    "F1Score": 0.9949748743718593,
+    "Precision": 1.0,
+    "Recall": 0.99
+  },
+  "EvaluationDetails": {
+    "EvaluationEndTimestamp": "2024-11-06T14:41:20.997601",
+    "Labels": [
+      "offer"
+    ],
+    "NumberOfTestingImages": 400,
+    "NumberOfTrainingImages": 1600,
+    "ProjectVersionArn": "arn:aws:rekognition:eu-west-1:825477577700:project/MineTilbud_Synthetic/version/MineTilbud_Synthetic.2024-11-06T14.37.01/1730900221074"
+  },
+  "LabelEvaluationResults": [
+    {
+      "Label": "offer",
+      "Metrics": {
+        "F1Score": 0.9949748743718593,
+        "Precision": 1.0,
+        "Recall": 0.99,
+        "Threshold": 0.95679
+      },
+      "NumberOfTestingImages": 400
+    }
+  ],
+  "Version": 1
+}

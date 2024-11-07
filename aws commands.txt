@@ -25,22 +25,22 @@ aws rekognition delete-dataset --dataset-arn arn:aws:rekognition:eu-west-1:82547
 aws rekognition delete-dataset --dataset-arn arn:aws:rekognition:eu-west-1:825477577700:project/MineTilbud_Synthetic/dataset/train/1730815024478 --profile ste-power
 
 aws rekognition detect-custom-labels \
-  --project-version-arn "arn:aws:rekognition:eu-west-1:825477577700:project/MineTilbud_Synthetic/version/MineTilbud_Synthetic.2024-11-05T15.02.21/1730815341754" \
+  --project-version-arn "arn:aws:rekognition:eu-west-1:825477577700:project/MineTilbud_Synthetic/version/MineTilbud_Synthetic.2024-11-06T14.37.01/1730900221074" \
   --image '{"S3Object": {"Bucket": "minetilbud-example-1","Name": "synthetic/ad_000001.jpg"}}' \
-  --min-confidence 15 \
-  --region eu-west-1 --profile ste-power
+  --min-confidence 75 \
+  --region eu-west-1 --profile ste-power > ad_000001_inference.json
 
 aws rekognition detect-custom-labels \
-  --project-version-arn "arn:aws:rekognition:eu-west-1:825477577700:project/MineTilbud_Synthetic/version/MineTilbud_Synthetic.2024-11-05T15.02.21/1730815341754" \
+  --project-version-arn "arn:aws:rekognition:eu-west-1:825477577700:project/MineTilbud_Synthetic/version/MineTilbud_Synthetic.2024-11-06T14.37.01/1730900221074" \
   --image '{"S3Object": {"Bucket": "minetilbud-example-1","Name": "mixed/2024_uge13_rema1000_babyogboern_5.jpg"}}' \
   --min-confidence 75 \
-  --region eu-west-1 --profile ste-power
+  --region eu-west-1 --profile ste-power > 2024_uge13_rema1000_babyogboern_5_inference.json
 
 aws rekognition detect-custom-labels \
-  --project-version-arn "arn:aws:rekognition:eu-west-1:825477577700:project/MineTilbud_Synthetic/version/MineTilbud_Synthetic.2024-11-05T15.02.21/1730815341754" \
+  --project-version-arn "arn:aws:rekognition:eu-west-1:825477577700:project/MineTilbud_Synthetic/version/MineTilbud_Synthetic.2024-11-06T14.37.01/1730900221074" \
   --image '{"S3Object": {"Bucket": "minetilbud-example-1","Name": "netto/netto-tilbud-uge-44-1.png"}}' \
   --min-confidence 75 \
-  --region eu-west-1 --profile ste-power
+  --region eu-west-1 --profile ste-power > netto-tilbud-uge-44-1_inference.json
 
 aws s3 ls s3://minetilbud-dnp-ai/mt-input2/ --profile ai
 
