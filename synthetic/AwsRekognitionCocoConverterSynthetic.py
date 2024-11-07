@@ -16,8 +16,8 @@ s3_path = 's3://' + s3_bucket + '/' + s3_key_path_images
 # s3 = boto3.resource('s3')
 
 # Local file information
-local_path = 'ad_dataset_2/'
-local_images_path = 'ad_dataset_2/images/'
+local_path = 'ad_dataset_3/'
+local_images_path = 'ad_dataset_3/images/'
 coco_manifest = 'annotations.json'
 coco_json_file = local_path + coco_manifest
 job_name = 'Custom Labels Synthetic'

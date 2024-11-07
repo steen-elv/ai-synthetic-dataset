@@ -312,85 +312,278 @@ class EnhancedOfferLayoutGenerator:
 
         elif scenario == 'adjacent':
             # Place offers adjacent to each other
-            try:
-                total_width = 0
-                offer_images = []
-
-                # First pass: load and resize images
-                for offer_path in selected_offers:
-                    offer_img = cv2.imread(str(offer_path))
-                    if offer_img is None:
-                        continue
-
-                    # Use consistent height for adjacent offers
-                    target_height = int(self.height * 0.3)  # 30% of canvas height
-                    aspect_ratio = offer_img.shape[1] / offer_img.shape[0]
-                    new_width = int(target_height * aspect_ratio)
-
-                    offer_img = cv2.resize(offer_img, (new_width, target_height))
-                    total_width += new_width
-                    offer_images.append(offer_img)
-
-                # Calculate starting position
-                start_x = random.randint(0, max(0, self.width - total_width))
-                y = random.randint(0, self.height - target_height)
-
-                current_x = start_x
-                for offer_img in offer_images:
-                    canvas, annotation = self._place_single_offer(
-                        canvas, offer_img, current_x, y, len(self.coco_dataset["images"]) + 1
-                    )
-                    if annotation:
-                        annotations.append(annotation)
-                        used_positions.append(annotation["bbox"])
-                    current_x += offer_img.shape[1]
-
-            except Exception as e:
-                print(f"Error in adjacent placement: {str(e)}")
+            canvas, new_annotations = self.place_offers_adjacent(
+                canvas,
+                selected_offers,
+                len(self.coco_dataset["images"]) + 1
+            )
+            annotations.extend(new_annotations)
 
         elif scenario == 'matching_bg':
-            # Place offers with matching backgrounds
-            for offer_path in selected_offers:
-                try:
-                    offer_img = cv2.imread(str(offer_path))
-                    if offer_img is None:
-                        continue
+            canvas, new_annotations = self.place_offers_matching_bg(
+                canvas,
+                selected_offers,
+                len(self.coco_dataset["images"]) + 1
+            )
+            annotations.extend(new_annotations)
 
-                    # Scale offer
-                    target_height = int(self.height * 0.3)
-                    aspect_ratio = offer_img.shape[1] / offer_img.shape[0]
-                    new_width = int(target_height * aspect_ratio)
+        return self.apply_augmentation(canvas), annotations
 
-                    offer_img = cv2.resize(offer_img, (new_width, target_height))
+    def place_offers_adjacent(self, canvas, offers, image_id):
+        """
+        Place offers adjacent to each other without significant overlap
 
-                    # Random position
+        Args:
+            canvas: The background image
+            offers: List of offer image paths
+            image_id: ID for COCO annotations
+
+        Returns:
+            tuple: (modified canvas, list of annotations)
+        """
+        annotations = []
+
+        try:
+            # First pass: load and resize images
+            offer_images = []
+            total_width = 0
+            target_height = int(self.height * 0.3)  # 30% of canvas height
+
+            for offer_path in offers:
+                offer_img = cv2.imread(str(offer_path))
+                if offer_img is None:
+                    continue
+
+                # Maintain aspect ratio while scaling
+                aspect_ratio = offer_img.shape[1] / offer_img.shape[0]
+                new_width = int(target_height * aspect_ratio)
+
+                offer_img = cv2.resize(offer_img, (new_width, target_height))
+                offer_images.append(offer_img)
+                total_width += new_width
+
+            if not offer_images:
+                return canvas, annotations
+
+            # Add small gap between offers (e.g., 10 pixels)
+            gap = 0
+            total_width += gap * (len(offer_images) - 1)
+
+            # If total width exceeds canvas width, reduce scale
+            if total_width > self.width:
+                scale_factor = (self.width * 0.9) / total_width  # Leave 10% margin
+                total_width = 0
+                scaled_images = []
+
+                for img in offer_images:
+                    new_width = int(img.shape[1] * scale_factor)
+                    new_height = int(img.shape[0] * scale_factor)
+                    scaled_img = cv2.resize(img, (new_width, new_height))
+                    scaled_images.append(scaled_img)
+                    total_width += new_width
+
+                offer_images = scaled_images
+                target_height = int(target_height * scale_factor)
+                total_width += gap * (len(offer_images) - 1)
+
+            # Calculate starting position to center the group
+            start_x = (self.width - total_width) // 2
+            # Random vertical position with margin
+            y = random.randint(0, self.height - target_height)
+
+            # Place offers
+            current_x = start_x
+            for offer_img in offer_images:
+                # Ensure we're within canvas bounds
+                if current_x + offer_img.shape[1] > self.width:
+                    break
+
+                # Place offer
+                h, w = offer_img.shape[:2]
+                canvas[y:y + h, current_x:current_x + w] = offer_img
+
+                # Create annotation
+                annotation = {
+                    "id": self.annotation_id,
+                    "image_id": image_id,
+                    "category_id": 1,
+                    "bbox": [current_x, y, w, h],
+                    "area": w * h,
+                    "segmentation": [],
+                    "iscrowd": 0
+                }
+                annotations.append(annotation)
+                self.annotation_id += 1
+
+                # Move to next position (including gap)
+                current_x += w + gap
+
+        except Exception as e:
+            print(f"Error in adjacent placement: {str(e)}")
+
+        return canvas, annotations
+
+    def place_offers_matching_bg(self, canvas, offers, image_id):
+        """
+        Place offers with backgrounds matching the canvas, avoiding significant overlap
+
+        Args:
+            canvas: The background image
+            offers: List of offer image paths
+            image_id: ID for COCO annotations
+
+        Returns:
+            tuple: (modified canvas, list of annotations)
+        """
+        annotations = []
+        used_positions = []
+
+        for offer_path in offers:
+            try:
+                # Load and check offer image
+                offer_img = cv2.imread(str(offer_path))
+                if offer_img is None:
+                    continue
+
+                # Scale offer
+                percentage_of_canvas_height = random.uniform(0.1, 0.3)
+                target_height = int(self.height * percentage_of_canvas_height)  # 10-30% of canvas height
+                aspect_ratio = offer_img.shape[1] / offer_img.shape[0]
+                new_width = int(target_height * aspect_ratio)
+
+                offer_img = cv2.resize(offer_img, (new_width, target_height))
+
+                # Find position without significant overlap
+                position_found = False
+                attempts = 0
+                while not position_found and attempts < 20:
                     x = random.randint(0, self.width - new_width)
                     y = random.randint(0, self.height - target_height)
 
-                    # Match background color
-                    bg_color = np.mean(canvas[y:y + target_height, x:x + new_width], axis=(0, 1))
+                    # Check overlap with existing offers
+                    bbox = [x, y, x + new_width, y + target_height]
+                    overlap = False
+                    for used_bbox in used_positions:
+                        if self.check_overlap(bbox, used_bbox, threshold=0.01):
+                            overlap = True
+                            break
 
-                    # Create a mask for the offer (you'll need to adjust this based on your offers)
-                    # This is a simple example - you might need more sophisticated masking
-                    gray = cv2.cvtColor(offer_img, cv2.COLOR_BGR2GRAY)
-                    _, mask = cv2.threshold(gray, 240, 255, cv2.THRESH_BINARY)
-                    mask = cv2.bitwise_not(mask)
+                    if not overlap:
+                        position_found = True
+                    attempts += 1
 
-                    # Apply background color
-                    for c in range(3):
-                        offer_img[:, :, c][mask == 0] = bg_color[c]
+                if not position_found:
+                    continue
 
-                    canvas, annotation = self._place_single_offer(
-                        canvas, offer_img, x, y, len(self.coco_dataset["images"]) + 1
+                # Get background region
+                bg_region = canvas[y:y + target_height, x:x + new_width].copy()
+
+                # Convert offer to HSV for better color matching
+                offer_hsv = cv2.cvtColor(offer_img, cv2.COLOR_BGR2HSV)
+                bg_hsv = cv2.cvtColor(bg_region, cv2.COLOR_BGR2HSV)
+
+                # Create mask for offer content
+                # Combine multiple techniques for better masking
+                masks = []
+
+                # Edge detection based mask
+                gray = cv2.cvtColor(offer_img, cv2.COLOR_BGR2GRAY)
+                edges = cv2.Canny(gray, 100, 200)
+                edge_mask = cv2.dilate(edges, None, iterations=3)
+                masks.append(edge_mask)
+
+                # Color-based mask
+                # Detect white/very light backgrounds
+                hsv_mask = cv2.inRange(offer_hsv,
+                                       (0, 0, 200),  # lower bound for white/light colors
+                                       (180, 30, 255))  # upper bound
+                masks.append(hsv_mask)
+
+                # Combine masks
+                final_mask = np.zeros_like(gray)
+                for mask in masks:
+                    final_mask = cv2.bitwise_or(final_mask, mask)
+
+                # Dilate mask to ensure coverage
+                final_mask = cv2.dilate(final_mask, None, iterations=2)
+
+                # Create inverse mask for background replacement
+                bg_mask = cv2.bitwise_not(final_mask)
+
+                # Create matched offer
+                matched_offer = offer_img.copy()
+
+                # Replace background in offer with canvas background
+                for c in range(3):
+                    matched_offer[:, :, c] = (
+                            (bg_mask / 255.0) * bg_region[:, :, c] +
+                            (final_mask / 255.0) * offer_img[:, :, c]
                     )
-                    if annotation:
-                        annotations.append(annotation)
-                        used_positions.append(annotation["bbox"])
 
-                except Exception as e:
-                    print(f"Error in matching_bg placement: {str(e)}")
+                # Blend edges
+                kernel = np.ones((3, 3), np.uint8)
+                edge_mask = cv2.dilate(final_mask, kernel, iterations=2) - cv2.erode(final_mask, kernel, iterations=2)
+                edge_mask = cv2.GaussianBlur(edge_mask.astype(float), (5, 5), 0)
 
-        return self.apply_augmentation(canvas), annotations
+                for c in range(3):
+                    blend = (matched_offer[:, :, c] * (1 - edge_mask / 255.0) +
+                             bg_region[:, :, c] * (edge_mask / 255.0))
+                    matched_offer[:, :, c] = blend
+
+                # Place offer on canvas
+                canvas[y:y + target_height, x:x + new_width] = matched_offer
+
+                # Create annotation
+                annotation = {
+                    "id": self.annotation_id,
+                    "image_id": image_id,
+                    "category_id": 1,
+                    "bbox": [x, y, new_width, target_height],
+                    "area": new_width * target_height,
+                    "segmentation": [],
+                    "iscrowd": 0
+                }
+                annotations.append(annotation)
+                used_positions.append([x, y, x + new_width, y + target_height])
+                self.annotation_id += 1
+
+            except Exception as e:
+                print(f"Error in matching_bg placement: {str(e)}")
+                continue
+
+        return canvas, annotations
+
+    def check_overlap(self, bbox1, bbox2, threshold=0.1):
+        """
+        Check if two bounding boxes overlap more than the threshold
+
+        Args:
+            bbox1: First bounding box [x1, y1, x2, y2]
+            bbox2: Second bounding box [x1, y1, x2, y2]
+            threshold: Maximum allowed overlap ratio (0-1)
+
+        Returns:
+            bool: True if overlap is greater than threshold
+        """
+        # Calculate intersection
+        x_left = max(bbox1[0], bbox2[0])
+        x_right = min(bbox1[2], bbox2[2])
+        y_top = max(bbox1[1], bbox2[1])
+        y_bottom = min(bbox1[3], bbox2[3])
+
+        if x_right < x_left or y_bottom < y_top:
+            return False
+
+        intersection = (x_right - x_left) * (y_bottom - y_top)
+
+        # Calculate areas
+        area1 = (bbox1[2] - bbox1[0]) * (bbox1[3] - bbox1[1])
+        area2 = (bbox2[2] - bbox2[0]) * (bbox2[3] - bbox2[1])
+
+        # Calculate overlap ratio
+        overlap_ratio = intersection / min(area1, area2)
+
+        return overlap_ratio > threshold
 
     def _place_single_offer(self, canvas, offer_img, x, y, image_id):
         """Helper method to place a single offer and create its annotation"""
@@ -427,16 +620,16 @@ class EnhancedOfferLayoutGenerator:
             print(f"Error in _place_single_offer: {str(e)}")
             return canvas, None
 
-    @staticmethod
-    def check_overlap(bbox1, bbox2, threshold=0):
-        """Check if two bounding boxes overlap"""
-        x1_min, y1_min, x1_max, y1_max = bbox1
-        x2_min, y2_min, x2_max, y2_max = bbox2
-
-        return not (x1_max < x2_min - threshold or
-                    x1_min > x2_max + threshold or
-                    y1_max < y2_min - threshold or
-                    y1_min > y2_max + threshold)
+    # @staticmethod
+    # def check_overlap(bbox1, bbox2, threshold=0):
+    #     """Check if two bounding boxes overlap"""
+    #     x1_min, y1_min, x1_max, y1_max = bbox1
+    #     x2_min, y2_min, x2_max, y2_max = bbox2
+    #
+    #     return not (x1_max < x2_min - threshold or
+    #                 x1_min > x2_max + threshold or
+    #                 y1_max < y2_min - threshold or
+    #                 y1_min > y2_max + threshold)
 
     def generate_dataset(self, num_layouts=100):
         """Generate dataset with dimension-safe image handling"""
@@ -488,7 +681,7 @@ class EnhancedOfferLayoutGenerator:
         print(f"Total annotations: {len(self.coco_dataset['annotations'])}")
 
 
-def generate_offer_dataset(input_folder, non_offer_folder, output_dir='ad_dataset_2', num_layouts=100, start_with=1):
+def generate_offer_dataset(input_folder, non_offer_folder, output_dir='XX', num_layouts=100, start_with=1):
     """Convenience function to generate offer detection dataset"""
     generator = EnhancedOfferLayoutGenerator(input_folder, non_offer_folder, output_dir, start_with)
 
@@ -508,4 +701,4 @@ if __name__ == "__main__":
     # Example usage
     input_folder = "/Users/steene/PycharmProjects/RekognitionExperiment/mt-input3"
     non_offer_folder = "/Users/steene/PycharmProjects/RekognitionExperiment/synthetic/product_images"
-    generate_offer_dataset(input_folder, non_offer_folder, output_dir="ad_dataset_3", num_layouts=11, start_with=1)
+    generate_offer_dataset(input_folder, non_offer_folder, output_dir="ad_dataset_3", num_layouts=3000, start_with=1)

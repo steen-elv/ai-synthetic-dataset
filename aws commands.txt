@@ -3,7 +3,7 @@
 Upload files to an S3 folder
 aws s3 cp ~/PycharmProjects/RekognitionExperiment/mt-input/ s3://minetilbud-example-1/mixed/ --recursive --exclude "*" --include "*.jpg" --profile ste-power
 aws s3 cp ~/PycharmProjects/RekognitionExperiment/mt-input2/ s3://minetilbud-example-1/mt-input2/ --recursive --exclude "*" --include "*.jpg" --profile ste-power
-aws s3 cp ~/PycharmProjects/RekognitionExperiment/synthetic/ad_dataset_2/images/ s3://minetilbud-example-1/synthetic/ --recursive --profile ste-power
+aws s3 cp ~/PycharmProjects/RekognitionExperiment/synthetic/ad_dataset_3/images/ s3://minetilbud-example-1/synthetic/ --recursive --profile ste-power
 
 aws s3 rm s3://minetilbud-example-1/synthetic/ --recursive --profile ste-power
 
@@ -21,8 +21,8 @@ aws rekognition describe-project-versions --project-arn arn:aws:rekognition:eu-w
 
 aws rekognition describe-dataset --dataset-arn arn:aws:rekognition:eu-west-1:825477577700:project/MineTilbud_Synthetic/dataset/train/1730899910884 --profile ste-power
 
-aws rekognition delete-dataset --dataset-arn arn:aws:rekognition:eu-west-1:825477577700:project/MineTilbud_Synthetic/dataset/test/1730815132331 --profile ste-power
-aws rekognition delete-dataset --dataset-arn arn:aws:rekognition:eu-west-1:825477577700:project/MineTilbud_Synthetic/dataset/train/1730815024478 --profile ste-power
+aws rekognition delete-dataset --dataset-arn arn:aws:rekognition:eu-west-1:825477577700:project/MineTilbud_Synthetic/dataset/train/1730978816167 --profile ste-power
+aws rekognition delete-dataset --dataset-arn arn:aws:rekognition:eu-west-1:825477577700:project/MineTilbud_Synthetic/dataset/test/1730978904359 --profile ste-power
 
 aws rekognition detect-custom-labels \
   --project-version-arn "arn:aws:rekognition:eu-west-1:825477577700:project/MineTilbud_Synthetic/version/MineTilbud_Synthetic.2024-11-06T14.37.01/1730900221074" \

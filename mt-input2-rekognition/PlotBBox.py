@@ -91,7 +91,7 @@ with open('test5.json', 'r') as f:
 # print(cocoLike["images"])
 # print(cocoLike["images"][0]["file_name"])
 # cocoImage = draw_image("/Users/steene/PycharmProjects/RekognitionExperiment/mt-input2/"+cocoLike["images"][0]["file_name"], cocoLike, coco_format)
-cocoImage = draw_image("/Users/steene/PycharmProjects/RekognitionExperiment/synthetic/ad_dataset/images/ad_000001.jpg", cocoLike, coco_format)
+cocoImage = draw_image("/Users/steene/PycharmProjects/RekognitionExperiment/synthetic/ad_dataset_3/images/ad_000005.jpg", cocoLike, coco_format)
 
 # fig = plt.figure(figsize=(1207/100,1489/100))
 fig = plt.figure(figsize=(1200/100,1600/100))
