@@ -343,6 +343,94 @@ class EnhancedOfferLayoutGenerator:
 
         return self.apply_augmentation(canvas), annotations
 
+    def add_offers_with_challenging_cases(self, background, offers):
+        """
+        Add offers to background including challenging cases like adjacent placement
+        and matching background colors
+
+        Args:
+            background: Background image
+            offers: List of offer images
+        """
+        result = background.copy()
+
+        # Create different scenarios for offer placement
+        scenarios = [
+            'adjacent',  # Place offers right next to each other
+            'overlapping',  # Slightly overlapping offers
+            'matching_bg',  # Match offer background to ad background
+            'standard'  # Random placement
+        ]
+
+        scenario = random.choice(scenarios)
+
+        if scenario == 'adjacent':
+            # Place offers adjacent to each other
+            x = random.randint(0, self.width - sum([o.shape[1] for o in offers]))
+            y = random.randint(0, self.height - max([o.shape[0] for o in offers]))
+
+            current_x = x
+            for offer in offers:
+                result = self._blend_image(result, offer, (current_x, y))
+                current_x += offer.shape[1]
+
+        elif scenario == 'overlapping':
+            # Place offers with slight overlap
+            x = random.randint(0, self.width - offers[0].shape[1])
+            y = random.randint(0, self.height - offers[0].shape[0])
+
+            for i, offer in enumerate(offers):
+                # Overlap by 10-30% with previous offer
+                if i > 0:
+                    overlap_x = random.uniform(0.1, 0.3) * offers[i - 1].shape[1]
+                    overlap_y = random.uniform(0.1, 0.3) * offers[i - 1].shape[0]
+                    x = x + offers[i - 1].shape[1] - int(overlap_x)
+                    y = y + random.randint(-int(overlap_y), int(overlap_y))
+
+                result = self._blend_image(result, offer, (x, y))
+
+        elif scenario == 'matching_bg':
+            # Match offer background to surrounding ad background
+            for offer in offers:
+                x = random.randint(0, self.width - offer.shape[1])
+                y = random.randint(0, self.height - offer.shape[0])
+
+                # Get background color at offer position
+                bg_color = np.mean(background[y:y + offer.shape[0], x:x + offer.shape[1]], axis=(0, 1))
+
+                # Create modified offer with matching background
+                modified_offer = offer.copy()
+                # Find non-transparent pixels (assuming alpha channel)
+                bg_mask = modified_offer[:, :, 3] < 128
+                # Set background color of offer to match ad background
+                for c in range(3):
+                    modified_offer[bg_mask, c] = bg_color[c]
+
+                result = self._blend_image(result, modified_offer, (x, y))
+
+        else:  # standard
+            # Random placement
+            for offer in offers:
+                x = random.randint(0, self.width - offer.shape[1])
+                y = random.randint(0, self.height - offer.shape[0])
+                result = self._blend_image(result, offer, (x, y))
+
+        return result
+
+    def _blend_image(self, background, foreground, position):
+        """Blend foreground image onto background at given position"""
+        x, y = position
+        result = background.copy()
+
+        alpha = foreground[:, :, 3] / 255.0
+        for c in range(3):
+            result[y:y + foreground.shape[0], x:x + foreground.shape[1], c] = (
+                    (1 - alpha) * result[y:y + foreground.shape[0], x:x + foreground.shape[1], c] +
+                    alpha * foreground[:, :, c]
+            )
+
+        return result
+
     @staticmethod
     def check_overlap(bbox1, bbox2, threshold=0):
         """Check if two bounding boxes overlap"""
