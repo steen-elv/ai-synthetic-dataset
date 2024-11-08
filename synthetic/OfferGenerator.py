@@ -11,7 +11,8 @@ import math
 
 
 class EnhancedOfferLayoutGenerator:
-    def __init__(self, input_folder, non_offer_folder, output_dir='ad_dataset', start_with=1):
+    def __init__(self, input_folder, netto_offer_folder, non_offer_folder, output_dir='ad_dataset', start_with=1):
+        self.netto_offer_folder = netto_offer_folder
         self.start_with = start_with
         self.non_offer_folder = non_offer_folder
         self.input_folder = input_folder
@@ -329,10 +330,7 @@ class EnhancedOfferLayoutGenerator:
             annotations.extend(new_annotations)
 
         elif scenario == 'netto_style':
-            canvas, new_annotations = self.generate_netto_style_ad(
-                [cv2.imread(str(path)) for path in selected_offers],
-                ["Product " + str(i + 1) for i in range(len(selected_offers))]  # Example descriptions
-            )
+            canvas, new_annotations = self.generate_netto_style_ad(min_offers=4,max_offers=8)
             annotations.extend(new_annotations)
 
         return self.apply_augmentation(canvas), annotations
@@ -630,146 +628,120 @@ class EnhancedOfferLayoutGenerator:
             print(f"Error in _place_single_offer: {str(e)}")
             return canvas, None
 
-    def create_netto_style_background(self):
-        """Create yellow background with Netto-style characteristics"""
-        # Create yellow background
-        yellow_bg = np.full((self.height, self.width, 3), [0, 238, 255], dtype=np.uint8)  # BGR format
+    def generate_netto_style_ad(self, min_offers=4, max_offers=8):
+        """
+        Generate Netto-style advertisement using real Netto offer images
 
-        # Add subtle noise/texture
+        Args:
+            netto_offers_folder: Path to folder containing Netto offer images
+            min_offers: Minimum number of offers to place
+            max_offers: Maximum number of offers to place
+        """
+        # Create yellow background
+        canvas = np.full((self.height, self.width, 3), [0, 238, 255], dtype=np.uint8)  # BGR yellow
+
+        # Add subtle noise/texture to background
         noise = np.random.normal(0, 3, (self.height, self.width, 3))
-        yellow_bg = np.clip(yellow_bg + noise, 0, 255).astype(np.uint8)
+        canvas = np.clip(canvas + noise, 0, 255).astype(np.uint8)
 
-        return yellow_bg
+        # Get list of Netto offer images
+        offer_paths = list(Path(self.netto_offer_folder).glob('*.jpeg'))  # Adjust file extension if needed
 
-    def create_price_burst(self, price="10,-", size=120):
-        """Create black starburst with white price text"""
-        # Create circular burst
-        burst = np.zeros((size, size, 3), dtype=np.uint8)
-        center = size // 2
-
-        # Draw black circle
-        cv2.circle(burst, (center, center), size // 2, (0, 0, 0), -1)
-
-        # Add points to create burst effect
-        num_points = 16
-        for i in range(num_points):
-            angle = i * (2 * np.pi / num_points)
-            point_x = center + int((size // 2 + 10) * np.cos(angle))
-            point_y = center + int((size // 2 + 10) * np.sin(angle))
-            cv2.line(burst, (center, center), (point_x, point_y), (0, 0, 0), 5)
-
-        # Add price text
-        font = cv2.FONT_HERSHEY_DUPLEX
-        font_scale = size / 120  # Scale based on burst size
-        thickness = max(2, int(size / 30))
-
-        # Get text size
-        text_size = cv2.getTextSize(price, font, font_scale, thickness)[0]
-        text_x = (size - text_size[0]) // 2
-        text_y = (size + text_size[1]) // 2
-
-        # Draw white text
-        cv2.putText(burst, price, (text_x, text_y), font, font_scale, (255, 255, 255), thickness)
-
-        return burst
-
-    def create_netto_style_offer(self, product_img, description, price="10,-"):
-        """Create a single Netto-style offer with product image, description, and price burst"""
-        # Calculate dimensions
-        product_height = int(product_img.shape[0] * 0.7)  # Product takes 70% of height
-        total_height = int(product_height * 1.4)  # Additional space for text and price
-        total_width = max(product_img.shape[1], int(total_height * 0.8))
-
-        # Create offer canvas
-        offer = np.full((total_height, total_width, 3), [0, 238, 255], dtype=np.uint8)  # Yellow background
-
-        # Place product image
-        product_resized = cv2.resize(product_img, (int(total_width * 0.8), product_height))
-        x_offset = (total_width - product_resized.shape[1]) // 2
-        y_offset = 0
-        offer[y_offset:y_offset + product_height, x_offset:x_offset + product_resized.shape[1]] = product_resized
-
-        # Add description text
-        font = cv2.FONT_HERSHEY_SIMPLEX
-        font_scale = total_width / 400
-        thickness = max(1, int(total_width / 200))
-
-        text_size = cv2.getTextSize(description, font, font_scale, thickness)[0]
-        text_x = (total_width - text_size[0]) // 2
-        text_y = product_height + text_size[1] + 10
-
-        cv2.putText(offer, description, (text_x, text_y), font, font_scale, (0, 0, 0), thickness)
-
-        # Add price burst
-        burst_size = int(total_width * 0.4)
-        price_burst = self.create_price_burst(price, burst_size)
-
-        burst_x = total_width - burst_size - 10
-        burst_y = total_height - burst_size - 10
-
-        # Create mask for burst
-        burst_gray = cv2.cvtColor(price_burst, cv2.COLOR_BGR2GRAY)
-        _, burst_mask = cv2.threshold(burst_gray, 1, 255, cv2.THRESH_BINARY)
-
-        # Place burst using mask
-        for c in range(3):
-            offer[burst_y:burst_y + burst_size, burst_x:burst_x + burst_size, c] = \
-                np.where(burst_mask > 0, price_burst[:, :, c],
-                         offer[burst_y:burst_y + burst_size, burst_x:burst_x + burst_size, c])
-
-        return offer
-
-    def generate_netto_style_ad(self, product_images, descriptions):
-        """Generate complete Netto-style advertisement with multiple offers"""
-        # Create yellow background
-        canvas = self.create_netto_style_background()
-        annotations = []
+        # Select random number of offers
+        num_offers = random.randint(min_offers, min(max_offers, len(offer_paths)))
+        selected_offers = random.sample(offer_paths, num_offers)
 
         # Calculate grid layout
-        num_offers = len(product_images)
         cols = min(3, num_offers)  # Max 3 columns
         rows = (num_offers + cols - 1) // cols
 
         cell_width = self.width // cols
         cell_height = self.height // rows
 
-        for i, (product_img, desc) in enumerate(zip(product_images, descriptions)):
-            # Calculate grid position
-            row = i // cols
-            col = i % cols
+        annotations = []
 
-            # Create offer
-            offer = self.create_netto_style_offer(product_img, desc)
+        for i, offer_path in enumerate(selected_offers):
+            try:
+                # Load offer image
+                offer_img = cv2.imread(str(offer_path), cv2.IMREAD_UNCHANGED)
+                if offer_img is None:
+                    continue
 
-            # Scale offer to fit cell
-            scale = min(
-                (cell_width * 0.9) / offer.shape[1],
-                (cell_height * 0.9) / offer.shape[0]
-            )
+                # Handle alpha channel if present
+                if offer_img.shape[2] == 4:
+                    # Extract alpha channel
+                    alpha = offer_img[:, :, 3] / 255.0
+                    # Convert to BGR
+                    offer_img = cv2.cvtColor(offer_img, cv2.COLOR_BGRA2BGR)
 
-            new_width = int(offer.shape[1] * scale)
-            new_height = int(offer.shape[0] * scale)
-            offer_resized = cv2.resize(offer, (new_width, new_height))
+                # Calculate grid position
+                row = i // cols
+                col = i % cols
 
-            # Calculate position
-            x = col * cell_width + (cell_width - new_width) // 2
-            y = row * cell_height + (cell_height - new_height) // 2
+                # Scale offer to fit cell while maintaining aspect ratio
+                scale = min(
+                    (cell_width * 0.9) / offer_img.shape[1],
+                    (cell_height * 0.9) / offer_img.shape[0]
+                )
 
-            # Place offer
-            canvas[y:y + new_height, x:x + new_width] = offer_resized
+                new_width = int(offer_img.shape[1] * scale)
+                new_height = int(offer_img.shape[0] * scale)
 
-            # Create annotation
-            annotation = {
-                "id": self.annotation_id,
-                "image_id": len(self.coco_dataset["images"]) + 1,
-                "category_id": 1,
-                "bbox": [x, y, new_width, new_height],
-                "area": new_width * new_height,
-                "segmentation": [],
-                "iscrowd": 0
-            }
-            annotations.append(annotation)
-            self.annotation_id += 1
+                if new_width <= 0 or new_height <= 0:
+                    continue
+
+                offer_resized = cv2.resize(offer_img, (new_width, new_height))
+
+                # Calculate position with slight random offset
+                base_x = col * cell_width + (cell_width - new_width) // 2
+                base_y = row * cell_height + (cell_height - new_height) // 2
+
+                # Add small random offset
+                x = base_x + random.randint(-10, 10)
+                y = base_y + random.randint(-10, 10)
+
+                # Ensure within bounds
+                x = max(0, min(x, self.width - new_width))
+                y = max(0, min(y, self.height - new_height))
+
+                # Optional: Add slight rotation for variety
+                if random.random() > 0.8:  # 20% chance of rotation
+                    angle = random.uniform(-5, 5)
+                    M = cv2.getRotationMatrix2D((new_width / 2, new_height / 2), angle, 1.0)
+                    offer_resized = cv2.warpAffine(
+                        offer_resized,
+                        M,
+                        (new_width, new_height),
+                        borderValue=(0, 238, 255)  # Match background color
+                    )
+
+                # Place offer on canvas
+                if 'alpha' in locals():
+                    # Use alpha channel if it was present
+                    alpha_resized = cv2.resize(alpha, (new_width, new_height))
+                    for c in range(3):
+                        canvas[y:y + new_height, x:x + new_width, c] = \
+                            canvas[y:y + new_height, x:x + new_width, c] * (1 - alpha_resized) + \
+                            offer_resized[:, :, c] * alpha_resized
+                else:
+                    canvas[y:y + new_height, x:x + new_width] = offer_resized
+
+                # Create annotation
+                annotation = {
+                    "id": self.annotation_id,
+                    "image_id": len(self.coco_dataset["images"]) + 1,
+                    "category_id": 1,
+                    "bbox": [x, y, new_width, new_height],
+                    "area": new_width * new_height,
+                    "segmentation": [],
+                    "iscrowd": 0
+                }
+                annotations.append(annotation)
+                self.annotation_id += 1
+
+            except Exception as e:
+                print(f"Error processing offer {offer_path}: {str(e)}")
+                continue
 
         return canvas, annotations
 
@@ -779,6 +751,7 @@ class EnhancedOfferLayoutGenerator:
         offer_paths = []
         for ext in ['.jpg', '.jpeg', '.png']:
             offer_paths.extend(Path(self.input_folder).rglob(f'*{ext}'))
+            offer_paths.extend(Path(self.netto_offer_folder).rglob(f'*{ext}'))
 
         if not offer_paths:
             raise ValueError(f"No images found in {self.input_folder}")
@@ -823,12 +796,13 @@ class EnhancedOfferLayoutGenerator:
         print(f"Total annotations: {len(self.coco_dataset['annotations'])}")
 
 
-def generate_offer_dataset(input_folder, non_offer_folder, output_dir='XX', num_layouts=100, start_with=1):
+def generate_offer_dataset(input_folder, netto_offer_folder, non_offer_folder, output_dir='XX', num_layouts=100, start_with=1):
     """Convenience function to generate offer detection dataset"""
-    generator = EnhancedOfferLayoutGenerator(input_folder, non_offer_folder, output_dir, start_with)
+    generator = EnhancedOfferLayoutGenerator(input_folder, netto_offer_folder, non_offer_folder, output_dir, start_with)
 
     print("Starting dataset generation...")
     print(f"Input folder: {input_folder}")
+    print(f"Netto offer folder: {netto_offer_folder}")
     print(f"Non offer folder: {non_offer_folder}")
     print(f"Output directory: {output_dir}")
     print(f"Number of layouts to generate: {num_layouts}")
@@ -843,4 +817,5 @@ if __name__ == "__main__":
     # Example usage
     input_folder = "/Users/steene/PycharmProjects/RekognitionExperiment/mt-input3"
     non_offer_folder = "/Users/steene/PycharmProjects/RekognitionExperiment/synthetic/product_images"
-    generate_offer_dataset(input_folder, non_offer_folder, output_dir="ad_dataset_4", num_layouts=50, start_with=1)
+    netto_offer_folder = "/Users/steene/PycharmProjects/RekognitionExperiment/netto_tilbud"
+    generate_offer_dataset(input_folder, netto_offer_folder, non_offer_folder, output_dir="ad_dataset_4", num_layouts=50, start_with=1)
