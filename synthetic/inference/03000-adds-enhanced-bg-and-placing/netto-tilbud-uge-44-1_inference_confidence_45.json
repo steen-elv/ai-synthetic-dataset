@@ -1,0 +1,40 @@
+{
+    "CustomLabels": [
+        {
+            "Name": "offer",
+            "Confidence": 81.78300476074219,
+            "Geometry": {
+                "BoundingBox": {
+                    "Width": 0.973580002784729,
+                    "Height": 1.0,
+                    "Left": 0.021609999239444733,
+                    "Top": 0.0
+                }
+            }
+        },
+        {
+            "Name": "offer",
+            "Confidence": 75.00699615478516,
+            "Geometry": {
+                "BoundingBox": {
+                    "Width": 0.48287999629974365,
+                    "Height": 0.25578001141548157,
+                    "Left": 0.018729999661445618,
+                    "Top": 0.716159999370575
+                }
+            }
+        },
+        {
+            "Name": "offer",
+            "Confidence": 50.79800033569336,
+            "Geometry": {
+                "BoundingBox": {
+                    "Width": 0.4790300130844116,
+                    "Height": 0.259799987077713,
+                    "Left": 0.016189999878406525,
+                    "Top": 0.4399699866771698
+                }
+            }
+        }
+    ]
+}
