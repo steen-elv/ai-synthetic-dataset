@@ -51,3 +51,7 @@ aws rekognition detect-custom-labels \
 aws s3 ls s3://minetilbud-dnp-ai/mt-input2/ --profile ai
 
 aws s3 cp s3://minetilbud-dnp-ai/mt-input2/ ~/PycharmProjects/RekognitionExperiment/mt-input2/ --recursive --profile ai
+
+aws s3 cp s3://minetilbud-dnp-ai/ ~/PycharmProjects/RekognitionExperiment/all-minetilbud-data --recursive --profile ai
+
+find ./all-minetilbud-data -iname "*.json" -iname "*.txt" -iname "*.txt"
